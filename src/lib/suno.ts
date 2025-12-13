@@ -119,13 +119,31 @@ export async function getMusicStatus(taskId: string): Promise<{
     },
   });
 
+  const responseText = await response.text();
+  console.log(`getMusicStatus(${taskId}):`, responseText);
+
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Suno status error: ${error}`);
+    throw new Error(`Suno status error: ${responseText}`);
   }
 
-  const result: SunoTaskStatus = await response.json();
-  return result.data;
+  let result;
+  try {
+    result = JSON.parse(responseText);
+  } catch {
+    throw new Error(`Invalid JSON from Suno status: ${responseText}`);
+  }
+
+  // Handle API errors
+  if (result.code && result.code !== 200) {
+    throw new Error(`Suno status API error: ${result.msg || responseText}`);
+  }
+
+  // Return with safe defaults
+  return {
+    status: result.data?.status || result.status || "pending",
+    audioUrl: result.data?.audioUrl || result.audioUrl,
+    musicDetails: result.data?.musicDetails || result.musicDetails,
+  };
 }
 
 export async function separateStems(audioUrl: string): Promise<{ taskId: string }> {
@@ -141,13 +159,30 @@ export async function separateStems(audioUrl: string): Promise<{ taskId: string 
     }),
   });
 
+  const responseText = await response.text();
+  console.log("separateStems response:", responseText);
+
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Suno stem separation error: ${error}`);
+    throw new Error(`Suno stem separation error: ${responseText}`);
   }
 
-  const result = await response.json();
-  return { taskId: result.data.taskId };
+  let result;
+  try {
+    result = JSON.parse(responseText);
+  } catch {
+    throw new Error(`Invalid JSON from stem separation: ${responseText}`);
+  }
+
+  if (result.code && result.code !== 200) {
+    throw new Error(`Stem separation API error: ${result.msg || responseText}`);
+  }
+
+  const taskId = result.data?.taskId || result.taskId;
+  if (!taskId) {
+    throw new Error(`Stem separation missing taskId: ${responseText}`);
+  }
+
+  return { taskId };
 }
 
 export async function getStemStatus(taskId: string): Promise<{
@@ -161,15 +196,27 @@ export async function getStemStatus(taskId: string): Promise<{
     },
   });
 
+  const responseText = await response.text();
+  console.log(`getStemStatus(${taskId}):`, responseText);
+
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Suno stem status error: ${error}`);
+    throw new Error(`Suno stem status error: ${responseText}`);
   }
 
-  const result = await response.json();
+  let result;
+  try {
+    result = JSON.parse(responseText);
+  } catch {
+    throw new Error(`Invalid JSON from stem status: ${responseText}`);
+  }
+
+  if (result.code && result.code !== 200) {
+    throw new Error(`Stem status API error: ${result.msg || responseText}`);
+  }
+
   return {
-    status: result.data.status,
-    stems: result.data.stems,
+    status: result.data?.status || result.status || "pending",
+    stems: result.data?.stems || result.stems,
   };
 }
 
