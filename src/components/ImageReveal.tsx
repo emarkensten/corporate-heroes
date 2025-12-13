@@ -11,7 +11,7 @@ interface ImageRevealProps {
 export function ImageReveal({ gtaImage }: ImageRevealProps) {
   return (
     <div className="relative min-h-screen w-full overflow-hidden">
-      {/* Fullscreen GTA Image */}
+      {/* Fullscreen Image */}
       <motion.div
         initial={{ scale: 1.1, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}

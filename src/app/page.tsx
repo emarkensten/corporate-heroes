@@ -83,8 +83,8 @@ export default function MainStage() {
       setMusicTaskId(musicData.taskId);
       console.log("Music task started:", musicData.taskId);
 
-      // Step 4: Generate GTA image (wait for this)
-      setProgress({ step: "Transforming to GTA style...", progress: 50 });
+      // Step 4: Generate stylized image (wait for this)
+      setProgress({ step: "Transforming photo...", progress: 50 });
       const imageResponse = await fetch("/api/generate-visuals", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -94,7 +94,7 @@ export default function MainStage() {
       if (imageResponse.ok) {
         const imageData = await imageResponse.json();
         setGtaImage(imageData.image);
-        setProgress({ step: "GTA transformation complete!", progress: 80 });
+        setProgress({ step: "Transformation complete!", progress: 80 });
       } else {
         // Use captured image as fallback
         console.warn("Image generation failed, using original");
@@ -256,7 +256,7 @@ export default function MainStage() {
           >
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold mb-2">Capture the Crowd</h2>
-              <p className="text-zinc-500">Strike a pose for the GTA transformation</p>
+              <p className="text-zinc-500">Strike a pose!</p>
             </div>
 
             <WebcamCapture onCapture={handleCapture} />

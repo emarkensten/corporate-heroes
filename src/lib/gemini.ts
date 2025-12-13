@@ -39,7 +39,7 @@ export async function generateLyrics(keywords: string[]): Promise<string> {
 export async function generateGTAImage(imageBase64: string): Promise<string> {
   const model = genAI.getGenerativeModel({ model: "gemini-3-pro-image-preview" });
 
-  const prompt = "Transform this photo into Grand Theft Auto V loading screen art style. High contrast, comic book shading, gangster vibes, bold colors. Make it look like a GTA character portrait.";
+  const prompt = "Transform this photo into Grand Theft Auto V loading screen art style. High contrast, comic book shading, gangster vibes, bold colors. Make it look like a GTA character portrait. Do not include any text, logos, watermarks, or lettering in the image.";
 
   // Remove data URL prefix if present
   const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");

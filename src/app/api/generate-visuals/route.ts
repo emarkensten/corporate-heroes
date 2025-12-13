@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Image generation error:", error);
     return NextResponse.json(
-      { error: "Failed to generate GTA image" },
+      { error: "Failed to generate image" },
       { status: 500 }
     );
   }

@@ -24,7 +24,7 @@ const FAKE_LOGS: LogEntry[] = [
   { text: "Calibrating swag coefficients...", type: "processing" },
   { text: "Loading street credentials...", type: "info" },
   { text: "Compiling rhyme patterns...", type: "processing" },
-  { text: "Rendering GTA assets...", type: "processing" },
+  { text: "Rendering visual style...", type: "processing" },
   { text: "Synthesizing west coast beats...", type: "processing" },
   { text: "Optimizing flow dynamics...", type: "processing" },
 ];
