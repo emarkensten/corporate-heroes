@@ -117,7 +117,7 @@ export async function getMusicStatus(taskId: string): Promise<{
     duration: number;
   }>;
 }> {
-  const response = await fetch(`${SUNO_API_URL}/generate/record/${taskId}`, {
+  const response = await fetch(`${SUNO_API_URL}/generate/record-info?taskId=${taskId}`, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${process.env.SUNO_API_KEY}`,
@@ -143,11 +143,30 @@ export async function getMusicStatus(taskId: string): Promise<{
     throw new Error(`Suno status API error: ${result.msg || responseText}`);
   }
 
-  // Return with safe defaults
+  // Parse the nested response structure from record-info endpoint
+  // Response: { code, data: { status, response: { sunoData: [...] } } }
+  const status = result.data?.status || result.status || "pending";
+  const sunoData = result.data?.response?.sunoData || result.data?.data || [];
+
+  // Map sunoData to musicDetails format
+  const musicDetails = sunoData.map((song: {
+    audioUrl?: string;
+    streamAudioUrl?: string;
+    title?: string;
+    duration?: number;
+    imageUrl?: string;
+  }) => ({
+    audioUrl: song.audioUrl,
+    streamAudioUrl: song.streamAudioUrl,
+    title: song.title,
+    duration: song.duration,
+    imageUrl: song.imageUrl,
+  }));
+
   return {
-    status: result.data?.status || result.status || "pending",
-    audioUrl: result.data?.audioUrl || result.audioUrl,
-    musicDetails: result.data?.musicDetails || result.musicDetails,
+    status,
+    audioUrl: musicDetails[0]?.audioUrl,
+    musicDetails: musicDetails.length > 0 ? musicDetails : undefined,
   };
 }
 
