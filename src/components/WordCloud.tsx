@@ -18,12 +18,17 @@ const COLORS = [
   "text-rose-400",
 ];
 
-// Generate random position ensuring some spread
+// Generate random position avoiding QR code area (bottom-right)
 function randomPosition() {
-  return {
-    x: Math.random() * 60 + 20, // 20-80% of container
-    y: Math.random() * 60 + 20, // 20-80% of container
-  };
+  let x, y;
+
+  // Keep trying until we get a position outside the QR zone
+  do {
+    x = Math.random() * 70 + 10; // 10-80% of container
+    y = Math.random() * 70 + 10; // 10-80% of container
+  } while (x > 65 && y > 65); // Avoid bottom-right corner (QR area)
+
+  return { x, y };
 }
 
 interface WordWithPosition extends Word {

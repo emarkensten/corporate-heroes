@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useCallback, useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Camera, RefreshCw, AlertCircle } from "lucide-react";
 
@@ -15,6 +15,7 @@ export function WebcamCapture({ onCapture }: WebcamCaptureProps) {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
 
   // Initialize webcam
   const initCamera = useCallback(async () => {
@@ -76,7 +77,25 @@ export function WebcamCapture({ onCapture }: WebcamCaptureProps) {
     };
   }, [stream]);
 
-  const captureImage = useCallback(() => {
+  // Handle countdown
+  useEffect(() => {
+    if (countdown === null) return;
+
+    if (countdown === 0) {
+      // Capture!
+      doCapture();
+      setCountdown(null);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setCountdown(countdown - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [countdown]);
+
+  const doCapture = useCallback(() => {
     if (!videoRef.current || !canvasRef.current) return;
 
     setIsCapturing(true);
@@ -103,6 +122,10 @@ export function WebcamCapture({ onCapture }: WebcamCaptureProps) {
       onCapture(imageBase64);
     }, 200);
   }, [onCapture]);
+
+  const startCountdown = useCallback(() => {
+    setCountdown(3);
+  }, []);
 
   if (error) {
     return (
@@ -147,6 +170,24 @@ export function WebcamCapture({ onCapture }: WebcamCaptureProps) {
           }}
         />
 
+        {/* Countdown overlay */}
+        <AnimatePresence>
+          {countdown !== null && countdown > 0 && (
+            <motion.div
+              key={countdown}
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 1.5, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="absolute inset-0 flex items-center justify-center bg-black/50"
+            >
+              <span className="text-[200px] font-bold text-white drop-shadow-[0_0_50px_rgba(139,92,246,0.8)]">
+                {countdown}
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Capture flash */}
         {isCapturing && (
           <motion.div
@@ -176,13 +217,13 @@ export function WebcamCapture({ onCapture }: WebcamCaptureProps) {
         className="mt-6 flex justify-center"
       >
         <Button
-          onClick={captureImage}
-          disabled={!stream || isCapturing}
+          onClick={startCountdown}
+          disabled={!stream || isCapturing || countdown !== null}
           size="lg"
           className="h-16 px-12 text-xl font-bold bg-violet-600 hover:bg-violet-500 text-white rounded-none border-0 shadow-[0_0_30px_rgba(139,92,246,0.3)]"
         >
           <Camera className="w-6 h-6 mr-3" />
-          CAPTURE CROWD
+          {countdown !== null ? `${countdown}...` : "CAPTURE CROWD"}
         </Button>
       </motion.div>
     </div>

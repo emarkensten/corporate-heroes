@@ -1,99 +1,66 @@
 "use client";
 
-import { useEffect, useRef, useMemo } from "react";
+import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { WordTimestamp } from "@/lib/types";
 
 interface KaraokeDisplayProps {
   lyrics: string;
-  timestamps: WordTimestamp[];
-  currentTime: number;
   isPlaying: boolean;
+  buzzwords?: string[]; // Words submitted by audience to highlight
 }
 
 export function KaraokeDisplay({
   lyrics,
-  timestamps,
-  currentTime,
   isPlaying,
+  buzzwords = [],
 }: KaraokeDisplayProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const activeLineRef = useRef<HTMLDivElement>(null);
+  // Create a Set for faster lookup (case-insensitive)
+  const buzzwordSet = useMemo(() => {
+    return new Set(buzzwords.map(w => w.toLowerCase()));
+  }, [buzzwords]);
 
-  // Parse lyrics into lines and words with word index ranges
+  // Check if a word matches any buzzword
+  const isBuzzword = (word: string) => {
+    // Remove punctuation and check
+    const cleanWord = word.replace(/[^\w\säöåÄÖÅ]/gi, '').toLowerCase();
+    return buzzwordSet.has(cleanWord);
+  };
+
+  // Parse lyrics into lines
   const lines = useMemo(() => {
-    let wordIndex = 0;
-    return lyrics.split("\n").map((line) => {
-      const words = line.split(/\s+/).filter(Boolean);
-      const isTag = line.startsWith("[") && line.endsWith("]");
-      const startWordIndex = wordIndex;
-      if (!isTag) {
-        wordIndex += words.length;
-      }
-      return {
-        text: line,
-        words,
-        isTag,
-        startWordIndex,
-        endWordIndex: wordIndex - 1,
-      };
-    });
+    return lyrics.split("\n").map((line) => ({
+      text: line,
+      isTag: line.startsWith("[") && line.endsWith("]"),
+      isEmpty: line.trim() === "",
+    }));
   }, [lyrics]);
 
-  // Find current word based on timestamp
-  const activeWordIndex = useMemo(() => {
-    for (let i = timestamps.length - 1; i >= 0; i--) {
-      if (currentTime >= timestamps[i].start) {
-        return i;
+  // Render a line with buzzword highlighting
+  const renderLineWithHighlights = (text: string) => {
+    const words = text.split(/(\s+)/); // Split but keep whitespace
+
+    return words.map((word, i) => {
+      if (word.match(/^\s+$/)) {
+        // Whitespace - render as is
+        return <span key={i}>{word}</span>;
       }
-    }
-    return -1;
-  }, [timestamps, currentTime]);
 
-  // Find which line contains the active word
-  const activeLineIndex = useMemo(() => {
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      if (!line.isTag && activeWordIndex >= line.startWordIndex && activeWordIndex <= line.endWordIndex) {
-        return i;
+      if (isBuzzword(word)) {
+        // Buzzword - highlight it!
+        return (
+          <span
+            key={i}
+            className="text-cyan-400 bg-cyan-400/10 px-1 rounded"
+          >
+            {word}
+          </span>
+        );
       }
-    }
-    return -1;
-  }, [lines, activeWordIndex]);
 
-  // Auto-scroll to active line
-  useEffect(() => {
-    if (activeLineRef.current && containerRef.current && isPlaying) {
-      activeLineRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    }
-  }, [activeLineIndex, isPlaying]);
-
-  // Create a map of word positions to timestamps
-  const wordTimestampMap = useMemo(() => {
-    const map = new Map<string, { index: number; timestamp: WordTimestamp }>();
-    let wordCount = 0;
-
-    lines.forEach((line) => {
-      if (!line.isTag) {
-        line.words.forEach((word) => {
-          if (wordCount < timestamps.length) {
-            map.set(`${wordCount}`, {
-              index: wordCount,
-              timestamp: timestamps[wordCount],
-            });
-          }
-          wordCount++;
-        });
-      }
+      // Regular word
+      return <span key={i}>{word}</span>;
     });
-
-    return map;
-  }, [lines, timestamps]);
-
-  let globalWordIndex = 0;
+  };
 
   return (
     <div className="h-full flex flex-col">
@@ -101,32 +68,35 @@ export function KaraokeDisplay({
       <div className="flex items-center justify-between p-4 border-b border-zinc-800/50">
         <div className="flex items-center gap-2">
           <div
-            className={`w-2 h-2 rounded-full ${
+            className={`w-3 h-3 rounded-full ${
               isPlaying ? "bg-green-400 animate-pulse" : "bg-zinc-600"
             }`}
           />
-          <span className="text-xs font-mono text-zinc-500 uppercase">
-            {isPlaying ? "Live" : "Ready"}
+          <span className="text-sm font-mono text-zinc-400 uppercase tracking-wider">
+            {isPlaying ? "Playing" : "Ready"}
           </span>
         </div>
+        {buzzwords.length > 0 && (
+          <span className="text-xs font-mono text-cyan-400">
+            {buzzwords.length} buzzwords
+          </span>
+        )}
       </div>
 
-      {/* Lyrics container */}
-      <div
-        ref={containerRef}
-        className="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-thin scrollbar-thumb-zinc-700"
-      >
+      {/* Lyrics container - manually scrollable */}
+      <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-3">
         {lines.map((line, lineIndex) => {
           // Tag lines (like [Verse 1], [Chorus])
           if (line.isTag) {
             return (
               <motion.div
                 key={lineIndex}
-                initial={{ opacity: 0.5 }}
+                initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="py-2"
+                transition={{ delay: lineIndex * 0.02 }}
+                className="py-3 mt-4"
               >
-                <span className="text-violet-500 font-mono text-sm uppercase tracking-wider">
+                <span className="text-violet-400 font-mono text-lg md:text-xl uppercase tracking-widest">
                   {line.text}
                 </span>
               </motion.div>
@@ -134,51 +104,23 @@ export function KaraokeDisplay({
           }
 
           // Empty lines
-          if (line.words.length === 0) {
-            return <div key={lineIndex} className="h-4" />;
+          if (line.isEmpty) {
+            return <div key={lineIndex} className="h-6" />;
           }
 
-          // Regular lyric lines
-          const isActiveLine = lineIndex === activeLineIndex;
+          // Regular lyric lines - LARGE font for audience visibility
           return (
-            <div
+            <motion.div
               key={lineIndex}
-              ref={isActiveLine ? activeLineRef : null}
-              className={`leading-relaxed transition-all duration-300 ${
-                isActiveLine ? "scale-[1.02] py-1" : ""
-              }`}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: lineIndex * 0.02 }}
+              className="leading-relaxed"
             >
-              {line.words.map((word, wordIndex) => {
-                const currentWordIndex = globalWordIndex++;
-                const wordData = wordTimestampMap.get(`${currentWordIndex}`);
-                const isActive = wordData && currentWordIndex === activeWordIndex;
-                const isPast = wordData && currentWordIndex < activeWordIndex;
-                const isFuture = wordData && currentWordIndex > activeWordIndex;
-
-                return (
-                  <span
-                    key={wordIndex}
-                    className={`inline-block mr-2 transition-all duration-150 font-mono text-lg md:text-xl ${
-                      isActive
-                        ? "text-violet-400 scale-110 font-bold drop-shadow-[0_0_8px_rgba(139,92,246,0.5)]"
-                        : isPast
-                        ? "text-zinc-500"
-                        : isFuture
-                        ? "text-white"
-                        : "text-zinc-400"
-                    }`}
-                  >
-                    {word}
-                    {/* Ad-lib detection */}
-                    {word.includes("(") && (
-                      <span className="text-cyan-400 text-sm ml-1">
-                        {word.match(/\(.*?\)/)?.[0]}
-                      </span>
-                    )}
-                  </span>
-                );
-              })}
-            </div>
+              <span className="text-2xl md:text-3xl lg:text-4xl font-bold text-white">
+                {renderLineWithHighlights(line.text)}
+              </span>
+            </motion.div>
           );
         })}
       </div>

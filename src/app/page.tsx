@@ -10,7 +10,7 @@ import { HackerTerminal } from "@/components/HackerTerminal";
 import { KaraokeDisplay } from "@/components/KaraokeDisplay";
 import { StemPlayer } from "@/components/StemPlayer";
 import { ImageReveal } from "@/components/ImageReveal";
-import { AppState, WordTimestamp, Stems } from "@/lib/types";
+import { AppState } from "@/lib/types";
 import { Lock, RotateCcw, Zap, Mic } from "lucide-react";
 
 export default function MainStage() {
@@ -20,9 +20,7 @@ export default function MainStage() {
   const [gtaImage, setGtaImage] = useState<string | null>(null);
   const [lyrics, setLyrics] = useState<string>("");
   const [audioUrl, setAudioUrl] = useState<string>("");
-  const [stems, setStems] = useState<Stems | null>(null);
-  const [timestamps, setTimestamps] = useState<WordTimestamp[]>([]);
-  const [currentTime, setCurrentTime] = useState(0);
+  const [buzzwords, setBuzzwords] = useState<string[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState({ step: "", progress: 0 });
   const [error, setError] = useState<string | null>(null);
@@ -46,6 +44,7 @@ export default function MainStage() {
       const wordsResponse = await fetch("/api/words");
       const wordsData = await wordsResponse.json();
       const keywords = wordsData.words.map((w: { text: string }) => w.text);
+      setBuzzwords(keywords); // Store for highlighting in lyrics
 
       if (keywords.length === 0) {
         throw new Error("No buzzwords collected! Go back and add some.");
@@ -121,7 +120,8 @@ export default function MainStage() {
 
     const pollInterval = setInterval(async () => {
       try {
-        const response = await fetch(`/api/music-status/${musicTaskId}?process=true`);
+        // Don't use ?process=true - skip stems/timestamps for faster playback
+        const response = await fetch(`/api/music-status/${musicTaskId}`);
         const data = await response.json();
 
         console.log("Music status:", data.status);
@@ -129,10 +129,7 @@ export default function MainStage() {
         if (data.status === "completed") {
           clearInterval(pollInterval);
           setAudioUrl(data.audioUrl);
-          if (data.stems) {
-            setStems(data.stems);
-          }
-          setTimestamps(data.timestamps || []);
+          // Skip stems and timestamps - just play the music
           setAppState("PERFORMANCE");
         } else if (data.status === "failed") {
           clearInterval(pollInterval);
@@ -157,9 +154,7 @@ export default function MainStage() {
     setGtaImage(null);
     setLyrics("");
     setAudioUrl("");
-    setStems(null);
-    setTimestamps([]);
-    setCurrentTime(0);
+    setBuzzwords([]);
     setIsPlaying(false);
     setProgress({ step: "", progress: 0 });
     setError(null);
@@ -178,16 +173,18 @@ export default function MainStage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(6,182,212,0.1),transparent_50%)]" />
       </div>
 
-      {/* Global reset button - always visible */}
-      <motion.button
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        onClick={handleReset}
-        className="fixed top-4 right-4 z-[100] p-2 rounded-full bg-black/50 backdrop-blur-sm border border-zinc-800 hover:border-zinc-600 hover:bg-black/70 transition-all group"
-        title="Clear words & start over"
-      >
-        <RotateCcw className="w-5 h-5 text-zinc-500 group-hover:text-zinc-300 transition-colors" />
-      </motion.button>
+      {/* Global reset button - hidden in LOBBY (has its own header) */}
+      {appState !== "LOBBY" && (
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          onClick={handleReset}
+          className="fixed top-4 right-4 z-[100] p-2 rounded-full bg-black/50 backdrop-blur-sm border border-zinc-800 hover:border-zinc-600 hover:bg-black/70 transition-all group"
+          title="Start over"
+        >
+          <RotateCcw className="w-5 h-5 text-zinc-500 group-hover:text-zinc-300 transition-colors" />
+        </motion.button>
+      )}
 
       <AnimatePresence mode="wait">
         {/* LOBBY STATE */}
@@ -208,14 +205,24 @@ export default function MainStage() {
                   <p className="text-xs text-zinc-500 font-mono">THE CORPORATE RAPPER</p>
                 </div>
               </div>
-              <Button
-                onClick={handleLockIn}
-                size="lg"
-                className="h-12 px-8 text-sm font-bold bg-violet-600 hover:bg-violet-500 text-white rounded-none border-0 shadow-[0_0_20px_rgba(139,92,246,0.3)]"
-              >
-                <Lock className="w-4 h-4 mr-2" />
-                LOCK IN & SNAPSHOT
-              </Button>
+              <div className="flex items-center gap-3">
+                {/* Clear words button */}
+                <button
+                  onClick={handleReset}
+                  className="p-2 rounded-full hover:bg-zinc-800/50 transition-colors group"
+                  title="Clear all words"
+                >
+                  <RotateCcw className="w-5 h-5 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
+                </button>
+                <Button
+                  onClick={handleLockIn}
+                  size="lg"
+                  className="h-12 px-8 text-sm font-bold bg-violet-600 hover:bg-violet-500 text-white rounded-none border-0 shadow-[0_0_20px_rgba(139,92,246,0.3)]"
+                >
+                  <Lock className="w-4 h-4 mr-2" />
+                  LOCK IN & SNAPSHOT
+                </Button>
+              </div>
             </header>
 
             {/* Word Cloud - Full screen */}
@@ -223,8 +230,8 @@ export default function MainStage() {
               <WordCloud refreshInterval={1000} />
             </div>
 
-            {/* QR Code - Bottom right */}
-            <div className="fixed bottom-8 right-8 z-40">
+            {/* QR Code - Bottom right (high z-index to stay above words) */}
+            <div className="fixed bottom-8 right-8 z-[60]">
               <QRDisplay size={160} />
             </div>
 
@@ -363,9 +370,8 @@ export default function MainStage() {
               <div className="ml-auto w-full max-w-xl h-screen bg-black/60 backdrop-blur-md border-l border-zinc-800/50">
                 <KaraokeDisplay
                   lyrics={lyrics}
-                  timestamps={timestamps}
-                  currentTime={currentTime}
                   isPlaying={isPlaying}
+                  buzzwords={buzzwords}
                 />
               </div>
             </div>
@@ -374,8 +380,6 @@ export default function MainStage() {
             <div className="fixed bottom-0 left-0 right-0 z-50">
               <StemPlayer
                 audioUrl={audioUrl}
-                stems={stems || undefined}
-                onTimeUpdate={setCurrentTime}
                 onPlayStateChange={setIsPlaying}
               />
             </div>

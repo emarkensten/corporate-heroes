@@ -1,197 +1,138 @@
 "use client";
 
 import { useRef, useState, useCallback, useEffect } from "react";
-import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Play, Pause, Volume2, VolumeX, Mic, Music } from "lucide-react";
-import { Stems } from "@/lib/types";
+import { Play, Pause, Volume2, VolumeX } from "lucide-react";
 
 interface StemPlayerProps {
   audioUrl: string;
-  stems?: Stems;
-  onTimeUpdate?: (time: number) => void;
   onPlayStateChange?: (isPlaying: boolean) => void;
 }
 
 export function StemPlayer({
   audioUrl,
-  stems,
-  onTimeUpdate,
   onPlayStateChange,
 }: StemPlayerProps) {
-  // Audio refs
-  const mainAudioRef = useRef<HTMLAudioElement>(null);
-  const vocalsRef = useRef<HTMLAudioElement>(null);
-  const bassRef = useRef<HTMLAudioElement>(null);
-  const drumsRef = useRef<HTMLAudioElement>(null);
-  const otherRef = useRef<HTMLAudioElement>(null);
-
-  // State
+  const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [vocalsOnly, setVocalsOnly] = useState(false);
-  const [masterVolume, setMasterVolume] = useState(0.8);
+  const [volume, setVolume] = useState(0.8);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  // All audio refs for stem mode
-  const stemRefs = [vocalsRef, bassRef, drumsRef, otherRef];
-  const hasStems = stems && stems.vocals && stems.bass && stems.drums && stems.other;
+  // Toggle play/pause
+  const togglePlay = useCallback(async () => {
+    if (!audioRef.current) return;
 
-  // Sync all audio elements
-  const syncAudio = useCallback((time: number) => {
-    if (hasStems) {
-      stemRefs.forEach((ref) => {
-        if (ref.current) {
-          ref.current.currentTime = time;
-        }
-      });
-    } else if (mainAudioRef.current) {
-      mainAudioRef.current.currentTime = time;
-    }
-  }, [hasStems, stemRefs]);
-
-  // Play all
-  const playAll = useCallback(async () => {
     try {
-      if (hasStems) {
-        await Promise.all(
-          stemRefs.map((ref) => ref.current?.play())
-        );
-      } else if (mainAudioRef.current) {
-        await mainAudioRef.current.play();
+      if (isPlaying) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+        onPlayStateChange?.(false);
+      } else {
+        await audioRef.current.play();
+        setIsPlaying(true);
+        onPlayStateChange?.(true);
       }
-      setIsPlaying(true);
-      onPlayStateChange?.(true);
     } catch (err) {
       console.error("Playback error:", err);
     }
-  }, [hasStems, stemRefs, onPlayStateChange]);
+  }, [isPlaying, onPlayStateChange]);
 
-  // Pause all
-  const pauseAll = useCallback(() => {
-    if (hasStems) {
-      stemRefs.forEach((ref) => {
-        ref.current?.pause();
-      });
-    } else {
-      mainAudioRef.current?.pause();
+  // Handle time update
+  const handleTimeUpdate = useCallback(() => {
+    if (audioRef.current) {
+      setCurrentTime(audioRef.current.currentTime);
     }
+  }, []);
+
+  // Handle metadata loaded
+  const handleLoadedMetadata = useCallback(() => {
+    if (audioRef.current) {
+      setDuration(audioRef.current.duration);
+      setIsLoaded(true);
+      console.log("Audio loaded, duration:", audioRef.current.duration);
+    }
+  }, []);
+
+  // Handle can play
+  const handleCanPlay = useCallback(() => {
+    if (audioRef.current && !isLoaded) {
+      setDuration(audioRef.current.duration);
+      setIsLoaded(true);
+    }
+  }, [isLoaded]);
+
+  // Handle seek
+  const handleSeek = useCallback((value: number[]) => {
+    if (audioRef.current) {
+      const newTime = value[0];
+      audioRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
+    }
+  }, []);
+
+  // Handle volume change
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
+  }, [volume]);
+
+  // Handle audio ended
+  const handleEnded = useCallback(() => {
     setIsPlaying(false);
     onPlayStateChange?.(false);
-  }, [hasStems, stemRefs, onPlayStateChange]);
-
-  // Toggle play/pause
-  const togglePlay = useCallback(() => {
-    if (isPlaying) {
-      pauseAll();
-    } else {
-      playAll();
-    }
-  }, [isPlaying, playAll, pauseAll]);
-
-  // Handle vocals only toggle
-  useEffect(() => {
-    if (!hasStems) return;
-
-    const instrumentalVolume = vocalsOnly ? 0 : masterVolume;
-
-    if (bassRef.current) bassRef.current.volume = instrumentalVolume;
-    if (drumsRef.current) drumsRef.current.volume = instrumentalVolume;
-    if (otherRef.current) otherRef.current.volume = instrumentalVolume;
-    if (vocalsRef.current) vocalsRef.current.volume = masterVolume;
-  }, [vocalsOnly, masterVolume, hasStems]);
-
-  // Handle master volume for non-stem mode
-  useEffect(() => {
-    if (!hasStems && mainAudioRef.current) {
-      mainAudioRef.current.volume = masterVolume;
-    }
-  }, [masterVolume, hasStems]);
-
-  // Time update handler
-  const handleTimeUpdate = useCallback(() => {
-    const audio = hasStems ? vocalsRef.current : mainAudioRef.current;
-    if (audio) {
-      setCurrentTime(audio.currentTime);
-      onTimeUpdate?.(audio.currentTime);
-    }
-  }, [hasStems, onTimeUpdate]);
-
-  // Duration loaded handler
-  const handleLoadedMetadata = useCallback(() => {
-    const audio = hasStems ? vocalsRef.current : mainAudioRef.current;
-    if (audio) {
-      setDuration(audio.duration);
-    }
-  }, [hasStems]);
-
-  // Seek handler
-  const handleSeek = useCallback(
-    (value: number[]) => {
-      const newTime = value[0];
-      setCurrentTime(newTime);
-      syncAudio(newTime);
-    },
-    [syncAudio]
-  );
+    setCurrentTime(0);
+  }, [onPlayStateChange]);
 
   // Format time helper
   const formatTime = (time: number) => {
+    if (!isFinite(time) || isNaN(time)) return "0:00";
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
   return (
-    <div className="w-full bg-zinc-900/80 backdrop-blur border border-zinc-800 p-6">
-      {/* Hidden audio elements */}
-      {hasStems ? (
-        <>
-          <audio
-            ref={vocalsRef}
-            src={stems.vocals}
-            onTimeUpdate={handleTimeUpdate}
-            onLoadedMetadata={handleLoadedMetadata}
-            preload="auto"
-          />
-          <audio ref={bassRef} src={stems.bass} preload="auto" />
-          <audio ref={drumsRef} src={stems.drums} preload="auto" />
-          <audio ref={otherRef} src={stems.other} preload="auto" />
-        </>
-      ) : (
-        <audio
-          ref={mainAudioRef}
-          src={audioUrl}
-          onTimeUpdate={handleTimeUpdate}
-          onLoadedMetadata={handleLoadedMetadata}
-          preload="auto"
-        />
-      )}
+    <div className="w-full bg-zinc-900/90 backdrop-blur-md border-t border-zinc-800 p-4 md:p-6">
+      {/* Audio element */}
+      <audio
+        ref={audioRef}
+        src={audioUrl}
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={handleLoadedMetadata}
+        onCanPlay={handleCanPlay}
+        onEnded={handleEnded}
+        preload="auto"
+      />
 
       {/* Controls row */}
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-4 md:gap-6">
         {/* Play/Pause */}
         <Button
           onClick={togglePlay}
           size="lg"
-          className="w-14 h-14 rounded-full bg-violet-600 hover:bg-violet-500 text-white border-0"
+          disabled={!audioUrl}
+          className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-violet-600 hover:bg-violet-500 text-white border-0 flex-shrink-0"
         >
           {isPlaying ? (
-            <Pause className="w-6 h-6" />
+            <Pause className="w-5 h-5 md:w-6 md:h-6" />
           ) : (
-            <Play className="w-6 h-6 ml-1" />
+            <Play className="w-5 h-5 md:w-6 md:h-6 ml-0.5" />
           )}
         </Button>
 
         {/* Timeline */}
-        <div className="flex-1 space-y-2">
+        <div className="flex-1 space-y-1">
           <Slider
             value={[currentTime]}
             min={0}
-            max={duration || 100}
+            max={duration > 0 ? duration : 100}
             step={0.1}
             onValueChange={handleSeek}
+            disabled={!isLoaded}
             className="cursor-pointer"
           />
           <div className="flex justify-between text-xs text-zinc-500 font-mono">
@@ -201,50 +142,25 @@ export function StemPlayer({
         </div>
 
         {/* Volume */}
-        <div className="flex items-center gap-2 w-32">
-          {masterVolume > 0 ? (
-            <Volume2 className="w-5 h-5 text-zinc-400" />
-          ) : (
-            <VolumeX className="w-5 h-5 text-zinc-400" />
-          )}
+        <div className="hidden md:flex items-center gap-2 w-28">
+          <button
+            onClick={() => setVolume(volume > 0 ? 0 : 0.8)}
+            className="text-zinc-400 hover:text-zinc-300"
+          >
+            {volume > 0 ? (
+              <Volume2 className="w-5 h-5" />
+            ) : (
+              <VolumeX className="w-5 h-5" />
+            )}
+          </button>
           <Slider
-            value={[masterVolume]}
+            value={[volume]}
             min={0}
             max={1}
             step={0.01}
-            onValueChange={(v) => setMasterVolume(v[0])}
+            onValueChange={(v) => setVolume(v[0])}
           />
         </div>
-
-        {/* Vocals Only Toggle (only if stems available) */}
-        {hasStems && (
-          <motion.div
-            whileTap={{ scale: 0.95 }}
-            className="flex items-center gap-2"
-          >
-            <Button
-              onClick={() => setVocalsOnly(!vocalsOnly)}
-              variant={vocalsOnly ? "default" : "outline"}
-              className={`rounded-none ${
-                vocalsOnly
-                  ? "bg-violet-600 text-white border-violet-600"
-                  : "border-zinc-700 text-zinc-400"
-              }`}
-            >
-              {vocalsOnly ? (
-                <>
-                  <Mic className="w-4 h-4 mr-2" />
-                  VOCALS
-                </>
-              ) : (
-                <>
-                  <Music className="w-4 h-4 mr-2" />
-                  FULL MIX
-                </>
-              )}
-            </Button>
-          </motion.div>
-        )}
       </div>
     </div>
   );
