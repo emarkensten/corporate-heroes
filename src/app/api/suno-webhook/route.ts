@@ -7,12 +7,13 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log("Suno webhook received:", JSON.stringify(body, null, 2));
 
-    // Extract task ID and status from webhook payload
-    const taskId = body.taskId || body.task_id || body.data?.taskId;
+    // Extract task ID from webhook payload (handle both camelCase and snake_case)
+    const taskId = body.taskId || body.task_id || body.data?.taskId || body.data?.task_id;
 
     if (!taskId) {
       console.error("Webhook missing taskId:", body);
-      return NextResponse.json({ error: "Missing taskId" }, { status: 400 });
+      // Still return 200 to acknowledge receipt
+      return NextResponse.json({ received: true, error: "Missing taskId" });
     }
 
     // Determine status

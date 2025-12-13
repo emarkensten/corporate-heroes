@@ -58,7 +58,7 @@ export async function generateMusic(
     instrumental: false,
     model: "V5",
     prompt: lyrics,
-    style: "90s west coast gangsta rap, g-funk, heavy bassline, aggressive swedish male vocals, dr dre style",
+    style: "90s west coast gangsta rap, g-funk, heavy bassline, aggressive swedish male vocals, old school hip hop",
     title: title,
     vocalGender: "m",
     callBackUrl: callBackUrl,
