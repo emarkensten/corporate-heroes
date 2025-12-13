@@ -18,15 +18,26 @@ export function KaraokeDisplay({
   isPlaying,
 }: KaraokeDisplayProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const activeWordRef = useRef<HTMLSpanElement>(null);
+  const activeLineRef = useRef<HTMLDivElement>(null);
 
-  // Parse lyrics into lines and words
+  // Parse lyrics into lines and words with word index ranges
   const lines = useMemo(() => {
-    return lyrics.split("\n").map((line) => ({
-      text: line,
-      words: line.split(/\s+/).filter(Boolean),
-      isTag: line.startsWith("[") && line.endsWith("]"),
-    }));
+    let wordIndex = 0;
+    return lyrics.split("\n").map((line) => {
+      const words = line.split(/\s+/).filter(Boolean);
+      const isTag = line.startsWith("[") && line.endsWith("]");
+      const startWordIndex = wordIndex;
+      if (!isTag) {
+        wordIndex += words.length;
+      }
+      return {
+        text: line,
+        words,
+        isTag,
+        startWordIndex,
+        endWordIndex: wordIndex - 1,
+      };
+    });
   }, [lyrics]);
 
   // Find current word based on timestamp
@@ -39,15 +50,26 @@ export function KaraokeDisplay({
     return -1;
   }, [timestamps, currentTime]);
 
-  // Auto-scroll to active word
+  // Find which line contains the active word
+  const activeLineIndex = useMemo(() => {
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (!line.isTag && activeWordIndex >= line.startWordIndex && activeWordIndex <= line.endWordIndex) {
+        return i;
+      }
+    }
+    return -1;
+  }, [lines, activeWordIndex]);
+
+  // Auto-scroll to active line
   useEffect(() => {
-    if (activeWordRef.current && containerRef.current) {
-      activeWordRef.current.scrollIntoView({
+    if (activeLineRef.current && containerRef.current && isPlaying) {
+      activeLineRef.current.scrollIntoView({
         behavior: "smooth",
         block: "center",
       });
     }
-  }, [activeWordIndex]);
+  }, [activeLineIndex, isPlaying]);
 
   // Create a map of word positions to timestamps
   const wordTimestampMap = useMemo(() => {
@@ -117,8 +139,15 @@ export function KaraokeDisplay({
           }
 
           // Regular lyric lines
+          const isActiveLine = lineIndex === activeLineIndex;
           return (
-            <div key={lineIndex} className="leading-relaxed">
+            <div
+              key={lineIndex}
+              ref={isActiveLine ? activeLineRef : null}
+              className={`leading-relaxed transition-all duration-300 ${
+                isActiveLine ? "scale-[1.02] py-1" : ""
+              }`}
+            >
               {line.words.map((word, wordIndex) => {
                 const currentWordIndex = globalWordIndex++;
                 const wordData = wordTimestampMap.get(`${currentWordIndex}`);
@@ -129,7 +158,6 @@ export function KaraokeDisplay({
                 return (
                   <span
                     key={wordIndex}
-                    ref={isActive ? activeWordRef : null}
                     className={`inline-block mr-2 transition-all duration-150 font-mono text-lg md:text-xl ${
                       isActive
                         ? "text-violet-400 scale-110 font-bold drop-shadow-[0_0_8px_rgba(139,92,246,0.5)]"

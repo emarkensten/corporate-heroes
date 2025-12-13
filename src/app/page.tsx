@@ -178,6 +178,17 @@ export default function MainStage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(6,182,212,0.1),transparent_50%)]" />
       </div>
 
+      {/* Global reset button - always visible */}
+      <motion.button
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        onClick={handleReset}
+        className="fixed top-4 right-4 z-[100] p-2 rounded-full bg-black/50 backdrop-blur-sm border border-zinc-800 hover:border-zinc-600 hover:bg-black/70 transition-all group"
+        title="Clear words & start over"
+      >
+        <RotateCcw className="w-5 h-5 text-zinc-500 group-hover:text-zinc-300 transition-colors" />
+      </motion.button>
+
       <AnimatePresence mode="wait">
         {/* LOBBY STATE */}
         {appState === "LOBBY" && (
@@ -323,17 +334,6 @@ export default function MainStage() {
               </motion.div>
             )}
 
-            {/* Reset button */}
-            <div className="fixed top-6 left-6 z-50">
-              <Button
-                onClick={handleReset}
-                variant="outline"
-                className="border-zinc-700 text-zinc-300 bg-black/50 backdrop-blur"
-              >
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Cancel
-              </Button>
-            </div>
           </motion.div>
         )}
 
@@ -378,18 +378,6 @@ export default function MainStage() {
                 onTimeUpdate={setCurrentTime}
                 onPlayStateChange={setIsPlaying}
               />
-            </div>
-
-            {/* Reset button - Top left */}
-            <div className="fixed top-6 left-6 z-50">
-              <Button
-                onClick={handleReset}
-                variant="outline"
-                className="border-zinc-700 text-zinc-300 bg-black/50 backdrop-blur"
-              >
-                <RotateCcw className="w-4 h-4 mr-2" />
-                New Session
-              </Button>
             </div>
           </motion.div>
         )}
