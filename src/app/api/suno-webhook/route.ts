@@ -16,14 +16,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true, error: "Missing taskId" });
     }
 
-    // Determine status
+    // Determine status - handle all documented Suno status values
+    // Callbacks happen at: TEXT_SUCCESS, FIRST_SUCCESS (first track ready), SUCCESS (all ready)
     const status = body.status || body.data?.status;
-    const isCompleted = status === "completed" || status === "SUCCESS" || body.code === 200;
-    const isFailed = status === "failed" || status === "FAILED" || body.code >= 400;
+    const isCompleted =
+      status === "completed" ||
+      status === "SUCCESS" ||
+      status === "FIRST_SUCCESS" || // First track ready - use for faster playback
+      body.code === 200;
+    const isFailed =
+      status === "failed" ||
+      status === "FAILED" ||
+      status === "GENERATE_AUDIO_FAILED" ||
+      status === "CREATE_TASK_FAILED" ||
+      status === "SENSITIVE_WORD_ERROR" ||
+      body.code >= 400;
 
     // Extract audio URLs from nested data structure
-    // Suno returns: body.data.data[0].stream_audio_url (fast, 30-40s)
-    const songsArray = body.data?.data || body.data?.musicDetails || body.musicDetails || [];
+    // Suno callback format: body.data.response.sunoData[] or body.data.data[]
+    const songsArray =
+      body.data?.response?.sunoData ||
+      body.data?.data ||
+      body.data?.musicDetails ||
+      body.musicDetails ||
+      [];
     const firstSong = songsArray[0] || {};
 
     // Prioritize stream URL for faster playback (30-40s vs 2-3min)

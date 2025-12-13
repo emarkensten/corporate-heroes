@@ -32,15 +32,21 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     // Determine status from local store or API
+    // FIRST_SUCCESS = first track ready (stream URL available after 30-40s)
+    // SUCCESS = all tracks ready (full URLs available after 2-3 min)
     const isCompleted =
       localResult?.status === "completed" ||
       apiStatus?.status === "completed" ||
-      apiStatus?.status === "SUCCESS";
+      apiStatus?.status === "SUCCESS" ||
+      apiStatus?.status === "FIRST_SUCCESS"; // Use first track for faster playback
 
     const isFailed =
       localResult?.status === "failed" ||
       apiStatus?.status === "failed" ||
-      apiStatus?.status === "FAILED";
+      apiStatus?.status === "FAILED" ||
+      apiStatus?.status === "GENERATE_AUDIO_FAILED" ||
+      apiStatus?.status === "CREATE_TASK_FAILED" ||
+      apiStatus?.status === "SENSITIVE_WORD_ERROR";
 
     if (isFailed) {
       return NextResponse.json({
