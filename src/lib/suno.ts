@@ -44,30 +44,67 @@ export async function generateMusic(
   lyrics: string,
   title: string = "Corporate Gangsta"
 ): Promise<{ taskId: string }> {
+  const apiKey = process.env.SUNO_API_KEY;
+  if (!apiKey) {
+    throw new Error("SUNO_API_KEY is not configured");
+  }
+
+  // Callback URL is required by Suno API
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://corporate-gangsta.vercel.app";
+  const callBackUrl = `${baseUrl}/api/suno-webhook`;
+
+  const requestBody = {
+    customMode: true,
+    instrumental: false,
+    model: "V5",
+    prompt: lyrics,
+    style: "90s west coast gangsta rap, g-funk, heavy bassline, aggressive swedish male vocals, dr dre style",
+    title: title,
+    vocalGender: "m",
+    callBackUrl: callBackUrl,
+  };
+
+  console.log("Suno request:", JSON.stringify(requestBody, null, 2));
+
   const response = await fetch(`${SUNO_API_URL}/generate`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.SUNO_API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({
-      customMode: true,
-      instrumental: false,
-      model: "V5",
-      prompt: lyrics,
-      style: "90s west coast gangsta rap, g-funk, heavy bassline, aggressive swedish male vocals, dr dre style",
-      title: title,
-      vocalGender: "m",
-    } satisfies SunoGenerateRequest),
+    body: JSON.stringify(requestBody),
   });
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Suno API error: ${error}`);
+  const responseText = await response.text();
+  console.log("Suno generate response:", responseText);
+
+  let result;
+  try {
+    result = JSON.parse(responseText);
+  } catch {
+    throw new Error(`Suno API returned invalid JSON: ${responseText}`);
   }
 
-  const result: SunoTaskResponse = await response.json();
-  return { taskId: result.data.taskId };
+  // Check for API-level errors (Suno returns 200 even for errors)
+  if (result.code && result.code !== 200) {
+    throw new Error(`Suno API error: ${result.msg || JSON.stringify(result)}`);
+  }
+
+  if (!response.ok) {
+    throw new Error(`Suno API HTTP error (${response.status}): ${responseText}`);
+  }
+
+  // Handle different response structures
+  const taskId = result.data?.taskId || result.taskId || result.data?.task_id || result.task_id;
+  if (!taskId) {
+    throw new Error(`Suno API response missing taskId: ${JSON.stringify(result)}`);
+  }
+
+  // Initialize task in our local store
+  const { initSunoTask } = await import("./suno-store");
+  initSunoTask(taskId);
+
+  return { taskId };
 }
 
 export async function getMusicStatus(taskId: string): Promise<{
@@ -140,27 +177,57 @@ export async function getStemStatus(taskId: string): Promise<{
 export async function waitForMusic(
   taskId: string,
   maxWaitMs: number = 180000,
-  pollIntervalMs: number = 3000
+  pollIntervalMs: number = 5000
 ): Promise<string> {
   const startTime = Date.now();
+  const { getSunoResult } = await import("./suno-store");
+
+  console.log(`Waiting for music task ${taskId}...`);
 
   while (Date.now() - startTime < maxWaitMs) {
-    const status = await getMusicStatus(taskId);
+    // First check our local store (updated by webhook)
+    const localResult = getSunoResult(taskId);
+    if (localResult) {
+      console.log(`Local store status for ${taskId}:`, localResult.status);
 
-    if (status.status === "completed" || status.status === "SUCCESS") {
-      // Get audio URL from musicDetails or direct audioUrl
-      const audioUrl = status.musicDetails?.[0]?.audioUrl || status.audioUrl;
-      if (audioUrl) return audioUrl;
+      if (localResult.status === "completed" && localResult.audioUrl) {
+        console.log(`Task ${taskId} completed via webhook!`);
+        return localResult.audioUrl;
+      }
+
+      if (localResult.status === "failed") {
+        throw new Error(localResult.error || "Music generation failed");
+      }
     }
 
-    if (status.status === "failed" || status.status === "FAILED") {
-      throw new Error("Music generation failed");
+    // Also try polling the Suno API directly as backup
+    try {
+      const status = await getMusicStatus(taskId);
+      console.log(`Suno API status for ${taskId}:`, status.status);
+
+      if (status.status === "completed" || status.status === "SUCCESS") {
+        const audioUrl = status.musicDetails?.[0]?.audioUrl || status.audioUrl;
+        if (audioUrl) {
+          console.log(`Task ${taskId} completed via API polling!`);
+          return audioUrl;
+        }
+      }
+
+      if (status.status === "failed" || status.status === "FAILED") {
+        throw new Error("Music generation failed");
+      }
+    } catch (pollError) {
+      // Polling might fail, but webhook should still work
+      console.log(`Polling error (will retry): ${pollError}`);
     }
+
+    const elapsed = Math.round((Date.now() - startTime) / 1000);
+    console.log(`Still waiting for task ${taskId}... (${elapsed}s elapsed)`);
 
     await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
   }
 
-  throw new Error("Music generation timed out");
+  throw new Error("Music generation timed out (3 minutes). The song may still be processing.");
 }
 
 export async function waitForStems(
