@@ -17,7 +17,7 @@ export interface Stems {
   other: string;
 }
 
-export type AppState = "LOBBY" | "CAPTURE" | "LOADING" | "PERFORMANCE";
+export type AppState = "LOBBY" | "CAPTURE" | "LOADING" | "IMAGE_REVEAL" | "PERFORMANCE";
 
 export interface GenerationProgress {
   step: string;

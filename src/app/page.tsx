@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { WordCloud } from "@/components/WordCloud";
@@ -9,7 +9,8 @@ import { WebcamCapture } from "@/components/WebcamCapture";
 import { HackerTerminal } from "@/components/HackerTerminal";
 import { KaraokeDisplay } from "@/components/KaraokeDisplay";
 import { StemPlayer } from "@/components/StemPlayer";
-import { AppState, AudioResult, WordTimestamp, Stems } from "@/lib/types";
+import { ImageReveal } from "@/components/ImageReveal";
+import { AppState, WordTimestamp, Stems } from "@/lib/types";
 import { Lock, RotateCcw, Zap, Mic } from "lucide-react";
 
 export default function MainStage() {
@@ -25,6 +26,7 @@ export default function MainStage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState({ step: "", progress: 0 });
   const [error, setError] = useState<string | null>(null);
+  const [musicTaskId, setMusicTaskId] = useState<string | null>(null);
 
   // Lock in words and move to capture
   const handleLockIn = useCallback(() => {
@@ -36,6 +38,7 @@ export default function MainStage() {
     setCapturedImage(imageBase64);
     setAppState("LOADING");
     setError(null);
+    setMusicTaskId(null);
 
     try {
       // Step 1: Get words
@@ -64,30 +67,31 @@ export default function MainStage() {
       setLyrics(lyricsData.lyrics);
       setProgress({ step: "Lyrics generated!", progress: 30 });
 
-      // Step 3: Generate GTA image (parallel with audio)
-      setProgress({ step: "Transforming to GTA style...", progress: 35 });
-      const imagePromise = fetch("/api/generate-visuals", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: imageBase64 }),
-      });
-
-      // Step 4: Generate audio
-      setProgress({ step: "Cooking up the beat...", progress: 45 });
-      const audioPromise = fetch("/api/generate-audio", {
+      // Step 3: Start music generation (don't wait for completion!)
+      setProgress({ step: "Starting music generation...", progress: 35 });
+      const musicResponse = await fetch("/api/start-music", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ lyrics: lyricsData.lyrics, title: "Corporate Gangsta" }),
       });
 
-      // Wait for both
-      setProgress({ step: "Processing visual and audio...", progress: 60 });
-      const [imageResponse, audioResponse] = await Promise.all([
-        imagePromise,
-        audioPromise,
-      ]);
+      if (!musicResponse.ok) {
+        const errorData = await musicResponse.json();
+        throw new Error(errorData.error || "Failed to start music generation");
+      }
 
-      // Process image
+      const musicData = await musicResponse.json();
+      setMusicTaskId(musicData.taskId);
+      console.log("Music task started:", musicData.taskId);
+
+      // Step 4: Generate GTA image (wait for this)
+      setProgress({ step: "Transforming to GTA style...", progress: 50 });
+      const imageResponse = await fetch("/api/generate-visuals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: imageBase64 }),
+      });
+
       if (imageResponse.ok) {
         const imageData = await imageResponse.json();
         setGtaImage(imageData.image);
@@ -98,31 +102,50 @@ export default function MainStage() {
         setGtaImage(imageBase64);
       }
 
-      // Process audio
-      if (!audioResponse.ok) {
-        const errorData = await audioResponse.json();
-        throw new Error(errorData.error || "Failed to generate audio");
-      }
+      // Step 5: Show image reveal while music generates
+      setProgress({ step: "Image ready! Generating music...", progress: 100 });
+      setAppState("IMAGE_REVEAL");
 
-      const audioData: AudioResult = await audioResponse.json();
-      setAudioUrl(audioData.audioUrl);
-      if (audioData.stems) {
-        setStems(audioData.stems);
-      }
-      setTimestamps(audioData.timestamps || []);
-
-      setProgress({ step: "Ready to drop!", progress: 100 });
-
-      // Short delay then show performance
-      setTimeout(() => {
-        setAppState("PERFORMANCE");
-      }, 1000);
     } catch (err) {
       console.error("Generation error:", err);
       setError(err instanceof Error ? err.message : "Something went wrong");
       setProgress({ step: "Error occurred", progress: 0 });
     }
   }, []);
+
+  // Poll for music completion in IMAGE_REVEAL state
+  useEffect(() => {
+    if (appState !== "IMAGE_REVEAL" || !musicTaskId) return;
+
+    console.log("Starting music polling for task:", musicTaskId);
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/music-status/${musicTaskId}?process=true`);
+        const data = await response.json();
+
+        console.log("Music status:", data.status);
+
+        if (data.status === "completed") {
+          clearInterval(pollInterval);
+          setAudioUrl(data.audioUrl);
+          if (data.stems) {
+            setStems(data.stems);
+          }
+          setTimestamps(data.timestamps || []);
+          setAppState("PERFORMANCE");
+        } else if (data.status === "failed") {
+          clearInterval(pollInterval);
+          setError(data.error || "Music generation failed");
+        }
+      } catch (err) {
+        console.error("Polling error:", err);
+        // Continue polling, don't stop on network errors
+      }
+    }, 3000);
+
+    return () => clearInterval(pollInterval);
+  }, [appState, musicTaskId]);
 
   // Reset to lobby
   const handleReset = useCallback(async () => {
@@ -140,6 +163,7 @@ export default function MainStage() {
     setIsPlaying(false);
     setProgress({ step: "", progress: 0 });
     setError(null);
+    setMusicTaskId(null);
     setAppState("LOBBY");
   }, []);
 
@@ -264,6 +288,52 @@ export default function MainStage() {
                 </Button>
               </motion.div>
             )}
+          </motion.div>
+        )}
+
+        {/* IMAGE_REVEAL STATE */}
+        {appState === "IMAGE_REVEAL" && gtaImage && (
+          <motion.div
+            key="image-reveal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="relative min-h-screen"
+          >
+            <ImageReveal gtaImage={gtaImage} lyrics={lyrics} />
+
+            {/* Error overlay */}
+            {error && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="fixed inset-0 flex items-center justify-center bg-black/80 z-50"
+              >
+                <div className="p-6 bg-red-900/20 border border-red-800 text-red-400 max-w-md text-center rounded-lg">
+                  <p className="font-mono text-sm mb-4">{error}</p>
+                  <Button
+                    onClick={handleReset}
+                    variant="outline"
+                    className="border-red-800 text-red-400"
+                  >
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Start Over
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Reset button */}
+            <div className="fixed top-6 left-6 z-50">
+              <Button
+                onClick={handleReset}
+                variant="outline"
+                className="border-zinc-700 text-zinc-300 bg-black/50 backdrop-blur"
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Cancel
+              </Button>
+            </div>
           </motion.div>
         )}
 
