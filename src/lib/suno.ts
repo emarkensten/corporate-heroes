@@ -110,7 +110,12 @@ export async function generateMusic(
 export async function getMusicStatus(taskId: string): Promise<{
   status: string;
   audioUrl?: string;
-  musicDetails?: Array<{ audioUrl: string; title: string; duration: number }>;
+  musicDetails?: Array<{
+    streamAudioUrl?: string;
+    audioUrl: string;
+    title: string;
+    duration: number;
+  }>;
 }> {
   const response = await fetch(`${SUNO_API_URL}/generate/record/${taskId}`, {
     method: "GET",
@@ -237,9 +242,13 @@ export async function waitForMusic(
     if (localResult) {
       console.log(`Local store status for ${taskId}:`, localResult.status);
 
-      if (localResult.status === "completed" && localResult.audioUrl) {
-        console.log(`Task ${taskId} completed via webhook!`);
-        return localResult.audioUrl;
+      if (localResult.status === "completed") {
+        // Prioritize stream URL (30-40s) over full URL (2-3min)
+        const url = localResult.streamAudioUrl || localResult.audioUrl;
+        if (url) {
+          console.log(`Task ${taskId} completed via webhook! Using ${localResult.streamAudioUrl ? 'stream' : 'full'} URL`);
+          return url;
+        }
       }
 
       if (localResult.status === "failed") {
@@ -253,10 +262,14 @@ export async function waitForMusic(
       console.log(`Suno API status for ${taskId}:`, status.status);
 
       if (status.status === "completed" || status.status === "SUCCESS") {
-        const audioUrl = status.musicDetails?.[0]?.audioUrl || status.audioUrl;
-        if (audioUrl) {
-          console.log(`Task ${taskId} completed via API polling!`);
-          return audioUrl;
+        // Prioritize stream URL for faster playback
+        const streamUrl = status.musicDetails?.[0]?.streamAudioUrl;
+        const fullUrl = status.musicDetails?.[0]?.audioUrl || status.audioUrl;
+        const url = streamUrl || fullUrl;
+
+        if (url) {
+          console.log(`Task ${taskId} completed via API polling! Using ${streamUrl ? 'stream' : 'full'} URL`);
+          return url;
         }
       }
 

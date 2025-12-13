@@ -22,10 +22,17 @@ export async function POST(request: NextRequest) {
     const isFailed = status === "failed" || status === "FAILED" || body.code >= 400;
 
     // Extract audio URLs from nested data structure
-    // Suno returns: body.data.data[0].audio_url
+    // Suno returns: body.data.data[0].stream_audio_url (fast, 30-40s)
     const songsArray = body.data?.data || body.data?.musicDetails || body.musicDetails || [];
     const firstSong = songsArray[0] || {};
 
+    // Prioritize stream URL for faster playback (30-40s vs 2-3min)
+    const streamAudioUrl =
+      firstSong.stream_audio_url ||
+      firstSong.streamAudioUrl ||
+      firstSong.source_stream_audio_url;
+
+    // Full audio URL as backup
     const audioUrl =
       firstSong.audio_url ||
       firstSong.audioUrl ||
@@ -35,6 +42,7 @@ export async function POST(request: NextRequest) {
 
     // Convert snake_case to camelCase for consistency
     const musicDetails = songsArray.map((song: any) => ({
+      streamAudioUrl: song.stream_audio_url || song.streamAudioUrl,
       audioUrl: song.audio_url || song.audioUrl,
       title: song.title,
       duration: song.duration,
@@ -43,6 +51,7 @@ export async function POST(request: NextRequest) {
 
     setSunoResult(taskId, {
       status: isFailed ? "failed" : isCompleted ? "completed" : "processing",
+      streamAudioUrl,
       audioUrl,
       musicDetails,
       error: isFailed ? (body.msg || body.error || "Generation failed") : undefined,

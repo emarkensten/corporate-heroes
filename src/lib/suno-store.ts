@@ -4,9 +4,11 @@
 interface SunoResult {
   taskId: string;
   status: "pending" | "processing" | "completed" | "failed";
-  audioUrl?: string;
+  streamAudioUrl?: string; // Fast stream URL (30-40 sec)
+  audioUrl?: string; // Full download URL (2-3 min)
   musicDetails?: Array<{
     audioUrl: string;
+    streamAudioUrl?: string;
     title: string;
     duration: number;
   }>;
