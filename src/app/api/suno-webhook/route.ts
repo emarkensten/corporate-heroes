@@ -21,9 +21,25 @@ export async function POST(request: NextRequest) {
     const isCompleted = status === "completed" || status === "SUCCESS" || body.code === 200;
     const isFailed = status === "failed" || status === "FAILED" || body.code >= 400;
 
-    // Extract audio URLs
-    const musicDetails = body.data?.musicDetails || body.musicDetails || [];
-    const audioUrl = musicDetails[0]?.audioUrl || body.data?.audioUrl || body.audioUrl;
+    // Extract audio URLs from nested data structure
+    // Suno returns: body.data.data[0].audio_url
+    const songsArray = body.data?.data || body.data?.musicDetails || body.musicDetails || [];
+    const firstSong = songsArray[0] || {};
+
+    const audioUrl =
+      firstSong.audio_url ||
+      firstSong.audioUrl ||
+      firstSong.source_audio_url ||
+      body.data?.audioUrl ||
+      body.audioUrl;
+
+    // Convert snake_case to camelCase for consistency
+    const musicDetails = songsArray.map((song: any) => ({
+      audioUrl: song.audio_url || song.audioUrl,
+      title: song.title,
+      duration: song.duration,
+      imageUrl: song.image_url,
+    }));
 
     setSunoResult(taskId, {
       status: isFailed ? "failed" : isCompleted ? "completed" : "processing",
