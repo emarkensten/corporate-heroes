@@ -2,7 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-// MC KPI System Prompt (Copy exactly from spec)
+// MC KPI System Prompt
 const MC_KPI_PROMPT = `Agera som "MC KPI", en hardcore gangsterrappare (mellanchef).
 Skriv en rap-låt baserat på orden: {KEYWORDS}.
 {CROWD_SECTION}
@@ -27,18 +27,26 @@ VIKTIGA INSTRUKTIONER FÖR SUNO V5 (FÖLJ SLAVISKT):
 
 Generera BARA texten. Inget annat snack.`;
 
-// Analyze crowd photo and return a brief description
-async function describeCrowd(imageBase64: string): Promise<string> {
-  try {
-    const model = genAI.getGenerativeModel({ model: "gemini-3-pro-preview" });
+export async function generateLyrics(
+  keywords: string[],
+  imageBase64?: string
+): Promise<string> {
+  const model = genAI.getGenerativeModel({ model: "gemini-3-pro-preview" });
 
+  // Build prompt with optional crowd section
+  const crowdSection = imageBase64
+    ? "\n\nTitta på bilden av publiken. Inkludera en referens till dem i texten (antal personer, vad de har på sig, stämningen)."
+    : "";
+
+  const prompt = MC_KPI_PROMPT
+    .replace("{KEYWORDS}", keywords.join(", "))
+    .replace("{CROWD_SECTION}", crowdSection);
+
+  // If image provided, send as multimodal request (one API call)
+  if (imageBase64) {
     const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
-
     const result = await model.generateContent([
-      `Beskriv kort personerna på detta foto. Max 2 meningar på svenska.
-       Fokusera på: antal personer, vad de har på sig, deras uttryck/stämning.
-       Exempel: "En grupp på 8 personer i business casual, de ser förväntansfulla ut."
-       Om du inte kan se några personer tydligt, svara "en publik av corporate warriors".`,
+      prompt,
       {
         inlineData: {
           mimeType: "image/jpeg",
@@ -46,35 +54,12 @@ async function describeCrowd(imageBase64: string): Promise<string> {
         },
       },
     ]);
-
-    return result.response.text().trim();
-  } catch (error) {
-    console.error("Crowd description error:", error);
-    return "en publik av corporate warriors";
-  }
-}
-
-export async function generateLyrics(
-  keywords: string[],
-  imageBase64?: string
-): Promise<string> {
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-
-  // Analyze crowd if image provided
-  let crowdSection = "";
-  if (imageBase64) {
-    const crowdDescription = await describeCrowd(imageBase64);
-    crowdSection = `\nPubliken: ${crowdDescription}\nInkludera någon referens till publiken i texten.`;
+    return result.response.text().replace(/\*\*/g, '');
   }
 
-  const prompt = MC_KPI_PROMPT
-    .replace("{KEYWORDS}", keywords.join(", "))
-    .replace("{CROWD_SECTION}", crowdSection);
-
+  // No image - text only
   const result = await model.generateContent(prompt);
-  const response = result.response;
-  // Strip markdown bold formatting - Suno skips words wrapped in **
-  return response.text().replace(/\*\*/g, '');
+  return result.response.text().replace(/\*\*/g, '');
 }
 
 export async function generateGTAImage(imageBase64: string): Promise<string> {
