@@ -30,7 +30,7 @@ Generera BARA texten. Inget annat snack.`;
 // Analyze crowd photo and return a brief description
 async function describeCrowd(imageBase64: string): Promise<string> {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-3-pro-preview" });
 
     const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
 
