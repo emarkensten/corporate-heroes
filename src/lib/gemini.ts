@@ -56,12 +56,12 @@ export async function generateLyrics(
         },
       },
     ]);
-    return result.response.text().replace(/\*\*/g, '');
+    return result.response.text().replace(/\*+/g, '');
   }
 
   // No image - text only
   const result = await model.generateContent(prompt);
-  return result.response.text().replace(/\*\*/g, '');
+  return result.response.text().replace(/\*+/g, '');
 }
 
 export async function generateGTAImage(imageBase64: string): Promise<string> {
