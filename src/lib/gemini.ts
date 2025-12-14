@@ -26,6 +26,7 @@ VIKTIGA INSTRUKTIONER FÖR SUNO V5 (FÖLJ SLAVISKT):
 3. INNEHÅLL:
    - Blanda orten-slang med "Corporate Swenglish".
    - Var extremt dramatisk. Allt är på liv och död.
+   - Använd INTE asterisker (*) eller annan markdown-formatering.
 
 Generera BARA texten. Inget annat snack.`;
 
