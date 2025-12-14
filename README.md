@@ -1,36 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MC KPI - The Corporate Rapper
 
-## Getting Started
+En live-demo som omvandlar publikens buzzwords till en gangster rap-låt med AI-genererad musik och GTA-stiliserad bild.
 
-First, run the development server:
+## Vad det gör
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+1. **LOBBY** - Publik skickar in buzzwords via QR-kod
+2. **CAPTURE** - Tar foto på publiken (med 3-2-1 countdown)
+3. **LOADING** - AI genererar lyrics baserat på buzzwords + analyserar publiken i bilden
+4. **IMAGE_REVEAL** - Visar GTA-stiliserad bild medan musik genereras
+5. **PERFORMANCE** - Spelar upp låten med lyrics (buzzwords highlightade)
+
+## Tech Stack
+
+- **Next.js 16** - React framework
+- **Gemini 3 Pro** - Lyrics-generering (multimodal med bildanalys)
+- **Gemini 3 Pro Image** - GTA-stiliserad bildgenerering
+- **Suno V5** - AI-musikgenerering
+- **Framer Motion** - Animationer
+- **Tailwind CSS** - Styling
+
+## Flöde
+
+```
+Buzzwords + Foto
+       ↓
+   Gemini 3 Pro (lyrics + bildanalys i ett anrop)
+       ↓
+   ┌───────────────┬────────────────┐
+   ↓               ↓
+Suno V5         Gemini 3 Pro Image
+(musik)         (GTA-bild)
+   ↓               ↓
+   └───────┬───────┘
+           ↓
+    IMAGE_REVEAL (väntar på musik)
+           ↓
+      PERFORMANCE
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Setup
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Skapa `.env.local`:
 
-## Learn More
+```bash
+GEMINI_API_KEY=your_gemini_api_key
+SUNO_API_KEY=your_suno_api_key
+NEXT_PUBLIC_BASE_URL=http://localhost:3000
+```
 
-To learn more about Next.js, take a look at the following resources:
+### Installation
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm install
+npm run dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Öppna http://localhost:3000
 
-## Deploy on Vercel
+### Join-sidan
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Publik går till `/join` (via QR-kod) för att skicka in buzzwords.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Deployment
+
+Deployas automatiskt till Vercel vid push till main.
+
+## Prompts
+
+### Lyrics (MC KPI)
+- Hardcore gangsterrappare (mellanchef)
+- Blandar orten-slang med Corporate Swenglish
+- Extremt dramatiskt - allt är på liv och död
+- Analyserar publiken i bilden och refererar till dem
+
+### Musik (Suno V5)
+- 90s west coast gangsta rap
+- G-funk, heavy bassline
+- Aggressiv svensk manlig röst
+
+### Bild (Gemini)
+- GTA V loading screen art style
+- High contrast, comic book shading
+- Ingen text/logotyper i bilden
