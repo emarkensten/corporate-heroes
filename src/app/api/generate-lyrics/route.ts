@@ -4,7 +4,7 @@ import { generateLyrics } from "@/lib/gemini";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { keywords } = body;
+    const { keywords, image } = body;
 
     if (!keywords || !Array.isArray(keywords) || keywords.length === 0) {
       return NextResponse.json(
@@ -13,7 +13,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const lyrics = await generateLyrics(keywords);
+    // Pass image for crowd analysis if provided
+    const lyrics = await generateLyrics(keywords, image);
 
     return NextResponse.json({
       success: true,

@@ -57,7 +57,7 @@ export function ImageReveal({ gtaImage }: ImageRevealProps) {
             transition={{ delay: 0.7 }}
             className="text-2xl md:text-3xl font-bold text-white mb-3"
           >
-            MC KPI skapar din lat...
+            MC KPI skapar din låt...
           </motion.h2>
 
           {/* Animated loading dots */}

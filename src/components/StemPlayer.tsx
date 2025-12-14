@@ -151,10 +151,24 @@ export function StemPlayer({
       <audio
         ref={audioRef}
         src={audioUrl}
+        crossOrigin="anonymous"
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onCanPlay={handleCanPlay}
         onEnded={handleEnded}
+        onDurationChange={() => {
+          if (audioRef.current) {
+            setDuration(audioRef.current.duration);
+          }
+        }}
+        onPlay={() => {
+          setIsPlaying(true);
+          onPlayStateChange?.(true);
+        }}
+        onPause={() => {
+          setIsPlaying(false);
+          onPlayStateChange?.(false);
+        }}
         preload="auto"
       />
 

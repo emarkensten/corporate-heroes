@@ -50,12 +50,12 @@ export default function MainStage() {
         throw new Error("No buzzwords collected! Go back and add some.");
       }
 
-      // Step 2: Generate lyrics
-      setProgress({ step: "MC KPI writing bars...", progress: 15 });
+      // Step 2: Generate lyrics (with crowd analysis)
+      setProgress({ step: "Analyzing crowd & writing bars...", progress: 15 });
       const lyricsResponse = await fetch("/api/generate-lyrics", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ keywords }),
+        body: JSON.stringify({ keywords, image: imageBase64 }),
       });
 
       if (!lyricsResponse.ok) {
