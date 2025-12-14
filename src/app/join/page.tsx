@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send, Check, Loader2, Mic } from "lucide-react";
 
 export default function JoinPage() {
+  const inputRef = useRef<HTMLInputElement>(null);
   const [word, setWord] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
@@ -32,8 +33,11 @@ export default function JoinPage() {
       setStatus("success");
       setWord("");
 
-      // Reset after showing success
-      setTimeout(() => setStatus("idle"), 2000);
+      // Reset after showing success and refocus input
+      setTimeout(() => {
+        setStatus("idle");
+        inputRef.current?.focus();
+      }, 1500);
     } catch {
       setStatus("error");
       setErrorMessage("Could not send. Try again.");
@@ -77,13 +81,15 @@ export default function JoinPage() {
         >
           <div className="relative">
             <Input
+              ref={inputRef}
               type="text"
-              placeholder="SYNERGY, KPI, AGILE..."
+              placeholder="PROMPT, UX, PROTOTYP..."
               value={word}
               onChange={(e) => setWord(e.target.value.toUpperCase())}
               maxLength={50}
               disabled={status === "sending" || status === "success"}
               className="w-full h-14 px-4 text-lg font-mono bg-zinc-900/80 border-zinc-800 text-white placeholder:text-zinc-600 focus:border-violet-500 focus:ring-violet-500/20 rounded-none uppercase tracking-wider"
+              autoFocus
             />
           </div>
 
