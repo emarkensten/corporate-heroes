@@ -20,6 +20,8 @@ VIKTIGA INSTRUKTIONER FÖR SUNO V5 (FÖLJ SLAVISKT):
 2. AD-LIBS:
    - Använd parenteser () för bakgrundsröster i slutet av rader.
    - Exempel: "Budgeten är sprängd (Ka-ching!)"
+   - ENDAST korta utrop som kan sjungas (Yeah!, Skrrt!, Pow!, etc.)
+   - ALDRIG ljudeffekter eller instruktioner som "(explosion)", "(fade out)", "(ljud av X)"
 
 3. INNEHÅLL:
    - Blanda orten-slang med "Corporate Swenglish".
