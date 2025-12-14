@@ -83,21 +83,26 @@ export default function MainStage() {
       setMusicTaskId(musicData.taskId);
       console.log("Music task started:", musicData.taskId);
 
-      // Step 4: Generate stylized image (wait for this)
+      // Step 4: Generate stylized image (wait for this, but don't crash on failure)
       setProgress({ step: "Transforming photo...", progress: 50 });
-      const imageResponse = await fetch("/api/generate-visuals", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: imageBase64 }),
-      });
+      try {
+        const imageResponse = await fetch("/api/generate-visuals", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: imageBase64 }),
+        });
 
-      if (imageResponse.ok) {
-        const imageData = await imageResponse.json();
-        setGtaImage(imageData.image);
-        setProgress({ step: "Transformation complete!", progress: 80 });
-      } else {
-        // Use captured image as fallback
-        console.warn("Image generation failed, using original");
+        if (imageResponse.ok) {
+          const imageData = await imageResponse.json();
+          setGtaImage(imageData.image);
+          setProgress({ step: "Transformation complete!", progress: 80 });
+        } else {
+          console.warn("Image generation failed, using original");
+          setGtaImage(imageBase64);
+        }
+      } catch (imgErr) {
+        // Network error or other failure - use original image
+        console.warn("Image generation error, using original:", imgErr);
         setGtaImage(imageBase64);
       }
 
