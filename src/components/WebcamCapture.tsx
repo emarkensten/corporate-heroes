@@ -104,17 +104,24 @@ export function WebcamCapture({ onCapture }: WebcamCaptureProps) {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
 
-    if (!ctx) return;
+    if (!ctx) {
+      console.error("Failed to get canvas context");
+      setIsCapturing(false);
+      setError("Failed to capture image. Please try again.");
+      return;
+    }
 
-    // Set canvas size to video size
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    // Compress: scale down to max 800px width for faster upload
+    const MAX_WIDTH = 800;
+    const scale = Math.min(1, MAX_WIDTH / video.videoWidth);
+    canvas.width = Math.round(video.videoWidth * scale);
+    canvas.height = Math.round(video.videoHeight * scale);
 
-    // Draw video frame to canvas
-    ctx.drawImage(video, 0, 0);
+    // Draw scaled video frame to canvas
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    // Convert to base64
-    const imageBase64 = canvas.toDataURL("image/jpeg", 0.9);
+    // Convert to base64 with compression (0.8 quality)
+    const imageBase64 = canvas.toDataURL("image/jpeg", 0.8);
 
     // Flash effect then callback
     setTimeout(() => {

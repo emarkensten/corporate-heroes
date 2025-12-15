@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { WordCloud } from "@/components/WordCloud";
@@ -25,6 +25,10 @@ export default function MainStage() {
   const [progress, setProgress] = useState({ step: "", progress: 0 });
   const [error, setError] = useState<string | null>(null);
   const [musicTaskId, setMusicTaskId] = useState<string | null>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const pollStartTime = useRef<number>(0);
+  const pollFailures = useRef<number>(0);
+  const MAX_POLL_TIME = 180000; // 3 minutes max
 
   // Lock in words and move to capture
   const handleLockIn = useCallback(() => {
@@ -33,6 +37,10 @@ export default function MainStage() {
 
   // Capture image and start generation
   const handleCapture = useCallback(async (imageBase64: string) => {
+    // Prevent double-click
+    if (isCapturing) return;
+    setIsCapturing(true);
+
     setCapturedImage(imageBase64);
     setAppState("LOADING");
     setError(null);
@@ -42,6 +50,9 @@ export default function MainStage() {
       // Step 1: Get words
       setProgress({ step: "Collecting buzzwords...", progress: 5 });
       const wordsResponse = await fetch("/api/words");
+      if (!wordsResponse.ok) {
+        throw new Error("Failed to fetch buzzwords from server");
+      }
       const wordsData = await wordsResponse.json();
       const keywords = wordsData.words.map((w: { text: string }) => w.text);
       setBuzzwords(keywords); // Store for highlighting in lyrics
@@ -114,22 +125,34 @@ export default function MainStage() {
       console.error("Generation error:", err);
       setError(err instanceof Error ? err.message : "Something went wrong");
       setProgress({ step: "Error occurred", progress: 0 });
+      setIsCapturing(false);
     }
-  }, []);
+  }, [isCapturing]);
 
   // Poll for music completion in IMAGE_REVEAL state
   useEffect(() => {
     if (appState !== "IMAGE_REVEAL" || !musicTaskId) return;
 
     console.log("Starting music polling for task:", musicTaskId);
+    pollStartTime.current = Date.now();
+    pollFailures.current = 0;
+    setIsCapturing(false); // Reset capture guard
 
     const pollInterval = setInterval(async () => {
+      // Check for timeout
+      if (Date.now() - pollStartTime.current > MAX_POLL_TIME) {
+        clearInterval(pollInterval);
+        setError("Music generation timed out (3 min). Please try again.");
+        return;
+      }
+
       try {
         // Don't use ?process=true - skip stems/timestamps for faster playback
         const response = await fetch(`/api/music-status/${musicTaskId}`);
         const data = await response.json();
 
         console.log("Music status:", data.status);
+        pollFailures.current = 0; // Reset on success
 
         if (data.status === "completed") {
           clearInterval(pollInterval);
@@ -142,9 +165,14 @@ export default function MainStage() {
         }
       } catch (err) {
         console.error("Polling error:", err);
-        // Continue polling, don't stop on network errors
+        pollFailures.current += 1;
+
+        // Warn after 3 consecutive failures
+        if (pollFailures.current >= 3) {
+          setError("Network issues - check your connection. Still trying...");
+        }
       }
-    }, 3000);
+    }, 5000); // Increased to 5s for stability
 
     return () => clearInterval(pollInterval);
   }, [appState, musicTaskId]);
@@ -164,6 +192,7 @@ export default function MainStage() {
     setProgress({ step: "", progress: 0 });
     setError(null);
     setMusicTaskId(null);
+    setIsCapturing(false);
     setAppState("LOBBY");
   }, []);
 
