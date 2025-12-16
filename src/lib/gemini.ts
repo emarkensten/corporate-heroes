@@ -66,9 +66,9 @@ export async function generateLyrics(
 export async function generateGTAImage(imageBase64: string): Promise<string> {
   const model = genAI.getGenerativeModel({ model: "gemini-3-pro-image-preview" });
 
-  // Gemini 3 Pro Image prompt - strukturerad för bästa resultat
-  // Struktur: [Subject] doing [Action] in [Location]. [Composition]. [Lighting]. [Style].
-  const prompt = `A confident person posing for a character portrait in sunny Los Santos, California. Tight composition on face and upper body, looking directly at camera. Bright afternoon sunlight with warm golden hour glow, palm tree shadows. Grand Theft Auto loading screen art style with high contrast cel-shading and bold outlines. Vibrant color palette: coral pink buildings, turquoise sky, sunset orange accents, lush palm greens. No text or watermarks.`;
+  // Gemini 3 Pro Image prompt - GTA gangsta transformation med ljusare färger
+  // Behåll ansiktsdrag men lägg till gangsta-attribut
+  const prompt = `Transform this person into a GTA gangster character portrait. Keep their face recognizable but add gangsta style: thick gold chains, diamond grills, face tattoos, bandana or snapback cap, oversized designer sunglasses. The expression should be tough and intimidating, not smiling. Background is sunny Los Santos with palm trees and pink Art Deco buildings. Bright California afternoon lighting with warm golden tones. Grand Theft Auto V loading screen art style with high contrast cel-shading and bold comic book outlines. Vibrant color palette but tough mood. No text or watermarks.`;
 
   // Remove data URL prefix if present
   const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
