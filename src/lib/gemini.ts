@@ -2,20 +2,17 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-// MC KPI System Prompt
+// MC KPI System Prompt - KORT VERSION (~1:30 min)
 const MC_KPI_PROMPT = `Agera som "MC KPI", en hardcore gangsterrappare (mellanchef).
-Skriv en rap-låt baserat på orden: {KEYWORDS}.
+Skriv en KORT rap-låt (max 1,5 minut) baserat på orden: {KEYWORDS}.
 {CROWD_SECTION}
 
-VIKTIGA INSTRUKTIONER FÖR SUNO V5 (FÖLJ SLAVISKT):
-1. STRUKTUR:
-   - [Intro] (Kort, talad, sätt stämningen)
-   - [Verse 1] (Hårt, aggressivt flow, max 7 ord/rad)
-   - [Flow Switch] (Viktig tagg! Lägg in denna mitt i versen)
-   - [Chorus] (Catchy, repeterbar)
-   - [Break] (Kort paus)
-   - [Verse 2] (Aggressivare)
-   - [Outro] (Fade out)
+VIKTIGA INSTRUKTIONER FÖR SUNO V5:
+1. KOMPAKT STRUKTUR (max 20 rader totalt):
+   - [Intro] (2-4 rader, talad, sätt stämningen)
+   - [Verse] (max 6 rader, aggressivt flow)
+   - [Chorus] (max 4 rader, catchy och repeterbar)
+   - [Outro] (2 rader, fade out)
 
 2. AD-LIBS:
    - Använd parenteser () för bakgrundsröster i slutet av rader.
@@ -27,6 +24,7 @@ VIKTIGA INSTRUKTIONER FÖR SUNO V5 (FÖLJ SLAVISKT):
    - Blanda orten-slang med "Corporate Swenglish".
    - Var extremt dramatisk. Allt är på liv och död.
    - Använd INTE asterisker (*) eller annan markdown-formatering.
+   - Håll det KORT - max 20 rader totalt!
 
 Generera BARA texten. Inget annat snack.`;
 
@@ -36,9 +34,9 @@ export async function generateLyrics(
 ): Promise<string> {
   const model = genAI.getGenerativeModel({ model: "gemini-3-pro-preview" });
 
-  // Build prompt with optional crowd section
+  // Build prompt with optional crowd section - TIDIGT i låten
   const crowdSection = imageBase64
-    ? "\n\nTitta på bilden av publiken. Inkludera en referens till dem i texten (antal personer, vad de har på sig, stämningen)."
+    ? "\n\nTitta på bilden av publiken. VIKTIGT: Nämn publiken DIREKT i introt eller första versen (inte i slutet!). Beskriv något specifikt du ser: antal personer, kläder, stämning, eller något unikt."
     : "";
 
   const prompt = MC_KPI_PROMPT
@@ -68,7 +66,9 @@ export async function generateLyrics(
 export async function generateGTAImage(imageBase64: string): Promise<string> {
   const model = genAI.getGenerativeModel({ model: "gemini-3-pro-image-preview" });
 
-  const prompt = "Transform this photo into Grand Theft Auto V loading screen art style. High contrast, comic book shading, gangster vibes, bold colors. Make it look like a GTA character portrait. Do not include any text, logos, watermarks, or lettering in the image.";
+  // Gemini 3 Pro Image prompt - strukturerad för bästa resultat
+  // Struktur: [Subject] doing [Action] in [Location]. [Composition]. [Lighting]. [Style].
+  const prompt = `A confident person posing for a character portrait in sunny Los Santos, California. Tight composition on face and upper body, looking directly at camera. Bright afternoon sunlight with warm golden hour glow, palm tree shadows. Grand Theft Auto loading screen art style with high contrast cel-shading and bold outlines. Vibrant color palette: coral pink buildings, turquoise sky, sunset orange accents, lush palm greens. No text or watermarks.`;
 
   // Remove data URL prefix if present
   const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");

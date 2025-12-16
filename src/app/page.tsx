@@ -11,7 +11,8 @@ import { KaraokeDisplay } from "@/components/KaraokeDisplay";
 import { StemPlayer } from "@/components/StemPlayer";
 import { ImageReveal } from "@/components/ImageReveal";
 import { AppState } from "@/lib/types";
-import { Lock, RotateCcw, Zap, Mic } from "lucide-react";
+import { Lock, RotateCcw, Zap, Mic, Image as ImageIcon, Music } from "lucide-react";
+import { downloadBase64, downloadUrl } from "@/lib/download";
 
 export default function MainStage() {
   // App state
@@ -387,6 +388,28 @@ export default function MainStage() {
             exit={{ opacity: 0 }}
             className="relative min-h-screen"
           >
+            {/* Download buttons - fixed top left */}
+            <div className="fixed top-4 left-4 z-[100] flex gap-2">
+              {gtaImage && (
+                <button
+                  onClick={() => downloadBase64(gtaImage, `MC_KPI_${Date.now()}.jpg`)}
+                  className="p-2 rounded-full bg-black/50 backdrop-blur-sm border border-zinc-800 hover:border-zinc-600 hover:bg-black/70 transition-all group"
+                  title="Download image"
+                >
+                  <ImageIcon className="w-5 h-5 text-zinc-500 group-hover:text-zinc-300 transition-colors" />
+                </button>
+              )}
+              {audioUrl && (
+                <button
+                  onClick={() => downloadUrl(audioUrl, `MC_KPI_${Date.now()}.mp3`)}
+                  className="p-2 rounded-full bg-black/50 backdrop-blur-sm border border-zinc-800 hover:border-zinc-600 hover:bg-black/70 transition-all group"
+                  title="Download song"
+                >
+                  <Music className="w-5 h-5 text-zinc-500 group-hover:text-zinc-300 transition-colors" />
+                </button>
+              )}
+            </div>
+
             {/* GTA Background Image */}
             {gtaImage && (
               <div
