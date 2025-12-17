@@ -66,9 +66,20 @@ export async function generateLyrics(
 export async function generateGTAImage(imageBase64: string): Promise<string> {
   const model = genAI.getGenerativeModel({ model: "gemini-3-pro-image-preview" });
 
-  // Gemini 3 Pro Image prompt - GTA gangsta transformation med ljusare färger
-  // Behåll ansiktsdrag men lägg till gangsta-attribut
-  const prompt = `Transform this person into a GTA gangster character portrait. Keep their face recognizable but add gangsta style: thick gold chains, diamond grills, face tattoos, bandana or snapback cap, oversized designer sunglasses. The expression should be tough and intimidating, not smiling. Background is sunny Los Santos with palm trees and pink Art Deco buildings. Bright California afternoon lighting with warm golden tones. Grand Theft Auto V loading screen art style with high contrast cel-shading and bold comic book outlines. Vibrant color palette but tough mood. No text or watermarks.`;
+  // GTA group portrait prompt - optimized for crowd photos
+  const prompt = `[Composition & Zoom - Highest Priority] Re-imagine the wide-angle photo into a tightly composed, zoomed-in group portrait in Grand Theft Auto V loading screen art style. Aggressively crop background dead space. Visually compress and re-arrange people from the original periphery towards the center to create a dense, unified crowd that completely fills the frame. Individuals must be large enough to be clearly recognizable.
+
+[Hardcore Vibe & Attire] Transform the entire tightly packed group into hardcore gangsta characters.
+
+Poses & Attitude: Change passive postures to tough, aggressive hip-hop stances within the dense crowd: crossed arms, leaning with swagger, crouching in the front row. Expressions must be serious scowls and 'mean mugs' – absolutely no smiling.
+
+Gear: Apply heavy accessories: thick gold and diamond chains, oversized watches, rings. Clothing should be open denim vests over hoodies, basketball jerseys, and designer track jackets.
+
+Headwear & Ink: Add many snapback caps, specifying they MUST be worn backwards or sideways so foreheads remain visible. Add bandanas tied as headbands. Add extensive visible tattoos on arms (sleeves) and necks.
+
+[Identity Preservation Constraint] Despite heavy styling and tight packing, individual facial features, hairstyles, and hair colors must remain distinctly recognizable. Crucially: NO sunglasses covering eyes, and NO bandanas or masks covering the lower face.
+
+[Art Style & Setting] Sunny Los Santos background with palm trees and Deco buildings tightly framing the group. Bright, high-contrast California afternoon light with warm golden tones. Bold comic book outlines and cel-shading. No text.`;
 
   // Remove data URL prefix if present
   const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
