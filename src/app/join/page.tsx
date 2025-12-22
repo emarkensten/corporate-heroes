@@ -20,14 +20,27 @@ export default function JoinPage() {
     setErrorMessage("");
 
     try {
-      const response = await fetch("/api/words", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ word: word.trim() }),
-      });
+      // Split on comma and filter out empty strings
+      const words = word
+        .split(",")
+        .map((w) => w.trim())
+        .filter((w) => w.length > 0);
 
-      if (!response.ok) {
-        throw new Error("Failed to send word");
+      if (words.length === 0) {
+        throw new Error("No valid words");
+      }
+
+      // Send each word separately
+      for (const singleWord of words) {
+        const response = await fetch("/api/words", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ word: singleWord }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to send word");
+        }
       }
 
       setStatus("success");
@@ -41,7 +54,10 @@ export default function JoinPage() {
     } catch {
       setStatus("error");
       setErrorMessage("Could not send. Try again.");
-      setTimeout(() => setStatus("idle"), 3000);
+      setTimeout(() => {
+        setStatus("idle");
+        inputRef.current?.focus();
+      }, 3000);
     }
   };
 
@@ -67,7 +83,7 @@ export default function JoinPage() {
             </h1>
           </div>
           <p className="text-zinc-500 text-sm">
-            Drop your corporate buzzword
+            Drop your corporate buzzwords
           </p>
         </motion.div>
 
@@ -83,10 +99,10 @@ export default function JoinPage() {
             <Input
               ref={inputRef}
               type="text"
-              placeholder="PROMPT, UX, PROTOTYP..."
+              placeholder="Ditt buzzword"
               value={word}
               onChange={(e) => setWord(e.target.value.toUpperCase())}
-              maxLength={50}
+              maxLength={200}
               disabled={status === "sending" || status === "success"}
               className="w-full h-14 px-4 text-lg font-mono bg-zinc-900/80 border-zinc-800 text-white placeholder:text-zinc-600 focus:border-violet-500 focus:ring-violet-500/20 rounded-none uppercase tracking-wider"
               autoFocus
@@ -171,7 +187,9 @@ export default function JoinPage() {
           transition={{ delay: 0.3 }}
           className="text-zinc-600 text-xs text-center"
         >
-          Your word will appear on the main stage
+          Your words will appear on the main stage
+          <br />
+          <span className="text-zinc-700">Separate multiple words with comma</span>
         </motion.p>
       </div>
     </main>
