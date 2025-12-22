@@ -3,7 +3,7 @@
 import { useRef, useCallback, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Camera, RefreshCw, AlertCircle } from "lucide-react";
+import { Camera, RefreshCw, AlertCircle, Check, SwitchCamera } from "lucide-react";
 
 interface WebcamCaptureProps {
   onCapture: (imageBase64: string) => void;
@@ -12,13 +12,30 @@ interface WebcamCaptureProps {
 export function WebcamCapture({ onCapture }: WebcamCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
 
-  // Initialize webcam
-  const initCamera = useCallback(async () => {
+  // Camera selection state
+  const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string>("");
+  const [showCameraMenu, setShowCameraMenu] = useState(false);
+
+  // List available cameras
+  const listCameras = useCallback(async () => {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cameras = devices.filter((d) => d.kind === "videoinput");
+      setAvailableCameras(cameras);
+    } catch (err) {
+      console.error("Failed to enumerate devices:", err);
+    }
+  }, []);
+
+  // Initialize webcam with optional deviceId
+  const initCamera = useCallback(async (deviceId?: string) => {
     try {
       setError(null);
 
@@ -28,12 +45,21 @@ export function WebcamCapture({ onCapture }: WebcamCaptureProps) {
         return;
       }
 
+      // Build video constraints
+      const videoConstraints: MediaTrackConstraints = {
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+      };
+
+      // Use specific device if provided, otherwise default to user-facing
+      if (deviceId) {
+        videoConstraints.deviceId = { exact: deviceId };
+      } else {
+        videoConstraints.facingMode = "user";
+      }
+
       const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          facingMode: "user",
-        },
+        video: videoConstraints,
         audio: false,
       });
 
@@ -41,6 +67,18 @@ export function WebcamCapture({ onCapture }: WebcamCaptureProps) {
         videoRef.current.srcObject = mediaStream;
       }
       setStream(mediaStream);
+
+      // Update selected device ID from the actual track
+      const videoTrack = mediaStream.getVideoTracks()[0];
+      if (videoTrack) {
+        const settings = videoTrack.getSettings();
+        if (settings.deviceId) {
+          setSelectedDeviceId(settings.deviceId);
+        }
+      }
+
+      // Refresh camera list (labels become available after permission)
+      await listCameras();
     } catch (err) {
       console.error("Camera error:", err);
       const errorMessage = err instanceof Error ? err.message : "Unknown error";
@@ -48,20 +86,35 @@ export function WebcamCapture({ onCapture }: WebcamCaptureProps) {
         setError("Camera access denied. Please allow camera permissions in your browser settings.");
       } else if (errorMessage.includes("NotFoundError")) {
         setError("No camera found. Please connect a camera and try again.");
+      } else if (errorMessage.includes("OverconstrainedError")) {
+        // Selected camera not available, try default
+        setError(null);
+        setSelectedDeviceId("");
+        await initCamera();
       } else {
         setError(`Camera error: ${errorMessage}`);
       }
     }
-  }, []);
+  }, [listCameras]);
 
+  // Switch to a different camera
+  const switchCamera = useCallback(async (deviceId: string) => {
+    // Stop current stream
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+    }
+
+    setShowCameraMenu(false);
+    await initCamera(deviceId);
+  }, [stream, initCamera]);
+
+  // Initialize on mount
   useEffect(() => {
-    // Only run on client side
     if (typeof window !== "undefined") {
       initCamera();
     }
 
     return () => {
-      // Cleanup stream on unmount
       if (stream) {
         stream.getTracks().forEach((track) => track.stop());
       }
@@ -77,12 +130,37 @@ export function WebcamCapture({ onCapture }: WebcamCaptureProps) {
     };
   }, [stream]);
 
+  // Listen for device changes (hotplugging)
+  useEffect(() => {
+    const handleDeviceChange = () => {
+      console.log("Camera devices changed");
+      listCameras();
+    };
+
+    navigator.mediaDevices?.addEventListener("devicechange", handleDeviceChange);
+
+    return () => {
+      navigator.mediaDevices?.removeEventListener("devicechange", handleDeviceChange);
+    };
+  }, [listCameras]);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (showCameraMenu && menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowCameraMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showCameraMenu]);
+
   // Handle countdown
   useEffect(() => {
     if (countdown === null) return;
 
     if (countdown === 0) {
-      // Capture!
       doCapture();
       setCountdown(null);
       return;
@@ -134,13 +212,19 @@ export function WebcamCapture({ onCapture }: WebcamCaptureProps) {
     setCountdown(3);
   }, []);
 
+  // Get camera label with fallback
+  const getCameraLabel = (camera: MediaDeviceInfo, index: number) => {
+    if (camera.label) return camera.label;
+    return `Camera ${index + 1}`;
+  };
+
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 p-8">
         <AlertCircle className="w-12 h-12 text-red-400" />
         <p className="text-zinc-400 text-center">{error}</p>
         <Button
-          onClick={initCamera}
+          onClick={() => initCamera()}
           variant="outline"
           className="border-zinc-700 text-zinc-300"
         >
@@ -176,6 +260,47 @@ export function WebcamCapture({ onCapture }: WebcamCaptureProps) {
             )`,
           }}
         />
+
+        {/* Camera selector - only show if multiple cameras */}
+        {availableCameras.length > 1 && (
+          <div ref={menuRef} className="absolute top-4 right-16 z-20">
+            <button
+              onClick={() => setShowCameraMenu(!showCameraMenu)}
+              className="p-2 rounded-full bg-black/50 backdrop-blur-sm border border-zinc-700 hover:border-violet-500 transition-all"
+              title="Select camera"
+            >
+              <SwitchCamera className="w-4 h-4 text-zinc-400" />
+            </button>
+
+            <AnimatePresence>
+              {showCameraMenu && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute top-12 right-0 bg-black/90 backdrop-blur-md border border-zinc-800 rounded-lg p-2 min-w-[220px] max-w-[300px]"
+                >
+                  <div className="text-xs text-zinc-500 px-3 py-1 mb-1">Select Camera</div>
+                  {availableCameras.map((camera, index) => (
+                    <button
+                      key={camera.deviceId}
+                      onClick={() => switchCamera(camera.deviceId)}
+                      className={`w-full text-left px-3 py-2 rounded hover:bg-zinc-800 transition-colors flex items-center gap-2 ${
+                        camera.deviceId === selectedDeviceId ? "text-violet-400" : "text-zinc-400"
+                      }`}
+                    >
+                      <span className="w-4 h-4 flex-shrink-0">
+                        {camera.deviceId === selectedDeviceId && <Check className="w-4 h-4" />}
+                      </span>
+                      <span className="text-sm truncate">{getCameraLabel(camera, index)}</span>
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
 
         {/* Countdown overlay */}
         <AnimatePresence>
