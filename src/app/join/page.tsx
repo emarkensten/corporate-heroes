@@ -99,7 +99,7 @@ export default function JoinPage() {
             <Input
               ref={inputRef}
               type="text"
-              placeholder="Ditt buzzword"
+              placeholder="SYNERGY, AI, DISRUPTION..."
               value={word}
               onChange={(e) => setWord(e.target.value.toUpperCase())}
               maxLength={200}

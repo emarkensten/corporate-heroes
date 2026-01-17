@@ -2,32 +2,82 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-// The Corporate Heroes System Prompt - Power Ballad VERSION (~1:30 min)
-const MC_KPI_PROMPT = `Du är låtskrivare för "The Corporate Heroes", ett 80-tals power ballad-band.
+// The Corporate Heroes System Prompt - Power Ballad VERSION (~1:30 min) - ENGLISH
+const MC_KPI_PROMPT = `You are the songwriter for "The Corporate Heroes", an 80s power ballad rock band.
 
-UPPGIFT: Skriv en kraftfull, emotionell power ballad (max 20 rader) som kreativt väver samman dessa ord: {KEYWORDS}
+TASK: Write a powerful, emotional power ballad (max 20 lines) that creatively weaves together these words: {KEYWORDS}
 {CROWD_SECTION}
 
-KREATIV FRIHET:
-- Var ORIGINELL! Varje låt ska kännas unik - variera öppningar, perspektiv och narrativ
-- Blanda orden naturligt genom HELA låten - inte klumpat ihop i ett stycke
-- Använd orden som inspiration, inte checklista - omforma dem till poetiska metaforer
-- Skapa oväntade kopplingar mellan corporate-språk och emotionella teman
+CREATIVE FREEDOM:
+- Be ORIGINAL! Each song should feel unique - vary openings, perspectives, and narratives
+- Blend the words naturally throughout THE ENTIRE song - don't clump them in one section
+- Use the words as inspiration, not a checklist - transform them into poetic metaphors
+- Create unexpected connections between corporate language and emotional themes
 
-STRUKTUR (flexibel - välj vad som passar berättelsen):
-- Använd [Intro], [Verse], [Chorus], [Bridge], [Outro] där det passar
-- Börja INTE alltid med "Jag ser..." - variera!
-- Några idéer för öppningar: mitt i handlingen, en fråga, en metafor, en dröm, ett minne
+STRUCTURE (flexible - choose what fits the story):
+- Use [Intro], [Verse], [Chorus], [Bridge], [Outro] as needed
+- DON'T always start with "I see..." - vary it!
+- Opening ideas: in the middle of action, a question, a metaphor, a dream, a memory
 
-TEKNISKA REGLER FÖR SUNO:
-- Max 20 rader totalt
-- Parenteser () endast för bakgrundsutrop: (Yeah!), (Ooh!), (Hey!)
-- INGA asterisker, instruktioner eller ljudeffekter
-- En stark hook som upprepas
+TECHNICAL RULES FOR SUNO:
+- Max 20 lines total
+- Parentheses () only for backing vocals: (Yeah!), (Ooh!), (Hey!)
+- NO asterisks, instructions, or sound effects
+- One strong hook that repeats
 
-KÄNSLA: 80-tals power ballad - episk, dramatisk, hoppfull. Tänk Europe, Survivor, Bonnie Tyler.
+FEEL: 80s power ballad - epic, dramatic, hopeful. Think Europe, Survivor, Bonnie Tyler.
 
-Generera BARA låttexten.`;
+Generate ONLY the lyrics. Nothing else.`;
+
+// Word preprocessing prompt - cleans, translates, and selects best words
+const WORD_CLEANUP_PROMPT = `You are a word processor. Given a list of words/phrases, you must:
+
+1. FIX SPELLING: Correct any misspelled words
+2. TRANSLATE TO ENGLISH: If any words are in Swedish or other languages, translate them to English
+3. REMOVE DUPLICATES: Remove duplicate or very similar words
+4. SELECT THE BEST: If there are more than 15 words, select the 15 most interesting/diverse corporate buzzwords that would make a great power ballad
+
+INPUT WORDS: {WORDS}
+
+RESPOND WITH ONLY a comma-separated list of cleaned English words. No explanations, no numbering, just the words.
+Example output: SYNERGY, DISRUPTION, INNOVATION, LEADERSHIP, GROWTH`;
+
+// Preprocess words: translate, fix spelling, limit count
+export async function preprocessWords(words: string[]): Promise<string[]> {
+  if (words.length === 0) return [];
+
+  // If 5 or fewer words, skip preprocessing to save API call
+  if (words.length <= 5) {
+    return words.map(w => w.trim().toUpperCase());
+  }
+
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+  const prompt = WORD_CLEANUP_PROMPT.replace("{WORDS}", words.join(", "));
+
+  try {
+    const result = await model.generateContent(prompt);
+    const cleanedText = result.response.text().trim();
+
+    // Parse the comma-separated response
+    const cleanedWords = cleanedText
+      .split(",")
+      .map(w => w.trim().toUpperCase())
+      .filter(w => w.length > 0);
+
+    console.log("Word preprocessing:", {
+      input: words.length,
+      output: cleanedWords.length,
+      words: cleanedWords
+    });
+
+    return cleanedWords;
+  } catch (error) {
+    console.error("Word preprocessing failed, using original words:", error);
+    // Fallback: just take first 15 words
+    return words.slice(0, 15).map(w => w.trim().toUpperCase());
+  }
+}
 
 export async function generateLyrics(
   keywords: string[],
@@ -35,9 +85,9 @@ export async function generateLyrics(
 ): Promise<string> {
   const model = genAI.getGenerativeModel({ model: "gemini-3-pro-preview" });
 
-  // Build prompt with optional crowd section - integrated throughout
+  // Build prompt with optional crowd section - integrated throughout (ENGLISH)
   const crowdSection = imageBase64
-    ? "\n\nPUBLIKEN I BILDEN:\nTitta på bilden och hitta EN intressant detalj (inte kläder!) - det kan vara ett uttryck, en gest, antal personer, energin i rummet. Väv in denna detalj SUBTILT någonstans i låten - det behöver inte vara i början. Låt det kännas naturligt, inte påtvingat."
+    ? "\n\nTHE CROWD IN THE IMAGE:\nLook at the image and find ONE interesting detail (not clothing!) - it could be an expression, a gesture, number of people, or the energy in the room. Weave this detail SUBTLY somewhere in the song - it doesn't have to be at the beginning. Make it feel natural, not forced."
     : "";
 
   const prompt = MC_KPI_PROMPT

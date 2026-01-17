@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateLyrics } from "@/lib/gemini";
+import { generateLyrics, preprocessWords } from "@/lib/gemini";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,8 +13,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Preprocess words: translate, fix spelling, limit to best 15
+    const cleanedKeywords = await preprocessWords(keywords);
+    console.log("Cleaned keywords for lyrics:", cleanedKeywords);
+
     // Pass image for crowd analysis if provided
-    const lyrics = await generateLyrics(keywords, image);
+    const lyrics = await generateLyrics(cleanedKeywords, image);
 
     return NextResponse.json({
       success: true,
