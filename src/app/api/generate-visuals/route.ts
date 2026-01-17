@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateGTAImage } from "@/lib/gemini";
 
+export const maxDuration = 60;
+export const dynamic = "force-dynamic";
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();

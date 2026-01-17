@@ -3,38 +3,31 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 // The Corporate Heroes System Prompt - Power Ballad VERSION (~1:30 min)
-const MC_KPI_PROMPT = `Agera som "The Corporate Heroes", ett inspirerande 80s power ballad rockband.
-Skriv en KORT power ballad (max 1,5 minut) baserat på orden: {KEYWORDS}.
+const MC_KPI_PROMPT = `Du är låtskrivare för "The Corporate Heroes", ett 80-tals power ballad-band.
+
+UPPGIFT: Skriv en kraftfull, emotionell power ballad (max 20 rader) som kreativt väver samman dessa ord: {KEYWORDS}
 {CROWD_SECTION}
 
-VIKTIGA INSTRUKTIONER FÖR SUNO V5:
-1. KOMPAKT STRUKTUR (max 20 rader totalt):
-   - [Intro] (2-4 rader, talad eller mjukt sjungen, sätt stämningen)
-   - [Verse] (max 6 rader, bygger känslomässig intensitet)
-   - [Chorus] (max 4 rader, anthemisk och kraftfull, lätt att sjunga med i)
-   - [Outro] (2 rader, fade out med upprepad hook)
+KREATIV FRIHET:
+- Var ORIGINELL! Varje låt ska kännas unik - variera öppningar, perspektiv och narrativ
+- Blanda orden naturligt genom HELA låten - inte klumpat ihop i ett stycke
+- Använd orden som inspiration, inte checklista - omforma dem till poetiska metaforer
+- Skapa oväntade kopplingar mellan corporate-språk och emotionella teman
 
-2. AD-LIBS:
-   - Använd parenteser () för bakgrundsröster i slutet av rader
-   - Exempel: "Vi når våra mål (Yeah!)", "Tillsammans vi står (Ooh!)"
-   - ENDAST emotionella utrop som kan sjungas (Yeah!, Ooh!, Hey!, Woah!)
-   - ALDRIG ljudeffekter eller instruktioner som "(gitarrsolo)", "(fade out)"
+STRUKTUR (flexibel - välj vad som passar berättelsen):
+- Använd [Intro], [Verse], [Chorus], [Bridge], [Outro] där det passar
+- Börja INTE alltid med "Jag ser..." - variera!
+- Några idéer för öppningar: mitt i handlingen, en fråga, en metafor, en dröm, ett minne
 
-3. INNEHÅLL:
-   - Blanda corporate buzzwords med inspirerande, emotionellt laddade metaforer
-   - Teman: uthållighet, teamwork, att övervinna motgångar, nå toppen
-   - Var EXTREMT dramatisk och emotionell. Allt handlar om att kämpa och vinna
-   - Använd INTE asterisker (*) eller markdown-formatering
-   - Inkludera upprepade hooks/fraser som är lätta att sjunga med i
-   - Håll det KORT - max 20 rader totalt!
+TEKNISKA REGLER FÖR SUNO:
+- Max 20 rader totalt
+- Parenteser () endast för bakgrundsutrop: (Yeah!), (Ooh!), (Hey!)
+- INGA asterisker, instruktioner eller ljudeffekter
+- En stark hook som upprepas
 
-4. TONALITET:
-   - Inspirerande och hoppfull (inte aggressiv)
-   - Emotionell kraft och passion
-   - "Vi gör det tillsammans" mentalitet
-   - 80-tals power ballad-känsla: episk, dramatisk, anthemisk
+KÄNSLA: 80-tals power ballad - episk, dramatisk, hoppfull. Tänk Europe, Survivor, Bonnie Tyler.
 
-Generera BARA texten. Inget annat snack.`;
+Generera BARA låttexten.`;
 
 export async function generateLyrics(
   keywords: string[],
@@ -42,9 +35,9 @@ export async function generateLyrics(
 ): Promise<string> {
   const model = genAI.getGenerativeModel({ model: "gemini-3-pro-preview" });
 
-  // Build prompt with optional crowd section - TIDIGT i låten
+  // Build prompt with optional crowd section - integrated throughout
   const crowdSection = imageBase64
-    ? "\n\nTitta på bilden av publiken. VIKTIGT: Nämn publiken DIREKT i introt eller första versen (inte i slutet!). Beskriv något specifikt du ser: antal personer, kläder, energi, eller något unikt. Inkorporera dem som 'heroes' eller 'warriors' i narrativet."
+    ? "\n\nPUBLIKEN I BILDEN:\nTitta på bilden och hitta EN intressant detalj (inte kläder!) - det kan vara ett uttryck, en gest, antal personer, energin i rummet. Väv in denna detalj SUBTILT någonstans i låten - det behöver inte vara i början. Låt det kännas naturligt, inte påtvingat."
     : "";
 
   const prompt = MC_KPI_PROMPT
@@ -75,30 +68,34 @@ export async function generateGTAImage(imageBase64: string): Promise<string> {
   const model = genAI.getGenerativeModel({ model: "gemini-3-pro-image-preview" });
 
   // 80s Power Ballad LP on table - photorealistic scene
-  const prompt = `[SCENE COMPOSITION] Create a photorealistic photograph of a vintage vinyl LP record lying on a dark wooden table. The LP sleeve is the main focus, photographed from a slight angle above. Soft natural lighting from a window. The vinyl record is partially slid out of the sleeve, showing the black grooves.
+  const prompt = `[SCENE] Photorealistic photo of a vintage vinyl LP record on a dark wooden table. Soft natural lighting. The vinyl is partially slid out of the sleeve.
 
-[THE ALBUM COVER ON THE SLEEVE] The LP sleeve shows a classic 1980s glam rock / power ballad album cover featuring the person(s) from this photo transformed:
+[ALBUM COVER ON THE SLEEVE] Transform the person(s) in this photo into a classic 1980s power ballad album cover:
 
-- PHOTOREALISTIC portrait photography style (like Def Leppard, Bon Jovi, Europe album covers)
-- The person(s) styled as 80s rock stars: big teased hair with volume, leather jackets, band t-shirts
-- Dramatic studio lighting with purple/pink/gold gels, slight soft focus glow
-- Heroic confident poses, intense gazes
-- Facial features MUST remain clearly recognizable - this is crucial
-- NO sunglasses, NO masks
+CRITICAL - PRESERVE THESE EXACTLY:
+- The EXACT clothing they are wearing (do NOT change to leather jackets or band shirts)
+- Their facial features must be clearly recognizable
+- Their body position and pose
 
-[ALBUM COVER TEXT ON THE SLEEVE]
-- Band name "THE CORPORATE HEROES" in chrome/metallic 80s font at the top
-- Album title "POWER ANTHEM" in smaller text below
+ADD THESE 80s ROCK STAR ELEMENTS:
+- Big, voluminous 80s teased/feathered hair (add hairspray volume!)
+- Dramatic studio lighting with purple/pink/gold gels
+- Soft focus glow effect around them
+- 80s makeup: bold eyeshadow, defined features
+- Confident, heroic expression
+- Optional: subtle accessories like a bandana, wristbands, or chains
 
-[PHYSICAL REALISM OF THE SCENE]
-- The LP sleeve has slight wear, bent corners - a beloved album
-- Realistic paper/cardboard texture of the sleeve
-- The wooden table has visible grain
-- Soft shadows from the LP
-- Perhaps a coffee cup or plant slightly visible at the edge
-- The photo should look like it was taken with a nice camera in someone's home
+[TEXT ON SLEEVE]
+- "THE CORPORATE HEROES" in chrome/metallic 80s font at top
+- "POWER ANTHEM" smaller below
 
-[STYLE] Photorealistic photography of a physical object (the LP), NOT an illustration. The album COVER can have the stylized 80s look, but the SCENE of the LP on the table must be photorealistic.`;
+[PHYSICAL LP REALISM]
+- Worn sleeve with bent corners, loved album look
+- Cardboard texture visible
+- Wood grain on table
+- Soft shadows
+
+[STYLE] The LP scene is photorealistic. The album cover has 80s styling but the person keeps their original clothes.`;
 
   // Remove data URL prefix if present
   const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
