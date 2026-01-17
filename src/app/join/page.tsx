@@ -102,7 +102,7 @@ export default function JoinPage() {
               placeholder="SYNERGY, AI, DISRUPTION..."
               value={word}
               onChange={(e) => setWord(e.target.value.toUpperCase())}
-              maxLength={200}
+              maxLength={2000}
               disabled={status === "sending" || status === "success"}
               className="w-full h-14 px-4 text-lg font-mono bg-zinc-900/80 border-zinc-800 text-white placeholder:text-zinc-600 focus:border-[#FF1F8E] focus:ring-[#FF1F8E]/20 rounded-none uppercase tracking-wider"
               autoFocus
