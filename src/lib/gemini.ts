@@ -123,13 +123,17 @@ export async function generateGTAImage(imageBase64: string): Promise<string> {
 [THE ALBUM COVER ON THE SLEEVE] The LP sleeve shows a classic 1980s glam rock / power ballad album cover featuring the person(s) from this photo transformed:
 
 - PHOTOREALISTIC portrait photography style (like Def Leppard, Bon Jovi, Europe album covers)
-- Keep their EXACT clothing - do NOT change to leather jackets or band shirts
+- Keep their original clothing VISIBLE but layer 80s rock accessories ON TOP:
+  * Add an open leather/denim vest or unbuttoned jacket over their clothes
+  * Add metal studs, chains, pins, patches to their existing outfit
+  * Bandanas, wristbands, fingerless gloves, big belt buckles
+  * Their original shirt/clothing should still be visible underneath
 - Add big, voluminous 80s teased hair with hairspray volume
 - Dramatic studio lighting with purple/pink/gold gels, slight soft focus glow
-- Bold 80s makeup: defined eyebrows, dramatic eyeshadow
+- Bold 80s makeup: defined eyebrows, dramatic eyeshadow, maybe some glitter
 - Heroic confident poses, intense gazes
 - Facial features MUST remain clearly recognizable - this is crucial
-- NO sunglasses, NO masks
+- NO sunglasses, NO masks covering faces
 
 [ALBUM COVER TEXT ON THE SLEEVE]
 - Band name "THE CORPORATE HEROES" in chrome/metallic 80s font at the top
