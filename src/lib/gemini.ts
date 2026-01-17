@@ -5,27 +5,35 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 // The Corporate Heroes System Prompt - Power Ballad VERSION (~1:30 min) - ENGLISH
 const MC_KPI_PROMPT = `You are the songwriter for "The Corporate Heroes", an 80s power ballad rock band.
 
-TASK: Write a powerful, emotional power ballad (max 20 lines) that creatively weaves together these words: {KEYWORDS}
+THE THEME: This is a LOVE SONG and TRIBUTE to the heroes in the audience - people working to make the world better. Core themes:
+- Love for humanity and our planet
+- Hope for a brighter future
+- Fighting climate change, reaching sustainability goals
+- Building a better world together (Agenda 2030 spirit)
+- The audience ARE the heroes - celebrate them!
+
+TASK: Write a powerful, emotional power ballad (max 20 lines) inspired by these words from the audience: {KEYWORDS}
 {CROWD_SECTION}
 
-CREATIVE FREEDOM:
-- Be ORIGINAL! Each song should feel unique - vary openings, perspectives, and narratives
-- Blend the words naturally throughout THE ENTIRE song - don't clump them in one section
-- Use the words as inspiration, not a checklist - transform them into poetic metaphors
-- Create unexpected connections between corporate language and emotional themes
+CREATIVE APPROACH:
+- This is a LOVE BALLAD - make it emotional, hopeful, inspiring
+- The words are gifts from the heroes in the crowd - weave them in with gratitude
+- Transform the words into poetic metaphors about hope, change, and love
+- Celebrate the people fighting for a better tomorrow
+- Be ORIGINAL - vary openings, perspectives, narratives
 
-STRUCTURE (flexible - choose what fits the story):
+STRUCTURE (flexible):
 - Use [Intro], [Verse], [Chorus], [Bridge], [Outro] as needed
-- DON'T always start with "I see..." - vary it!
-- Opening ideas: in the middle of action, a question, a metaphor, a dream, a memory
+- DON'T always start the same way - vary it!
+- Ideas: a vision of the future, a call to arms, a love letter to Earth
 
 TECHNICAL RULES FOR SUNO:
 - Max 20 lines total
 - Parentheses () only for backing vocals: (Yeah!), (Ooh!), (Hey!)
 - NO asterisks, instructions, or sound effects
-- One strong hook that repeats
+- One strong hopeful hook that repeats
 
-FEEL: 80s power ballad - epic, dramatic, hopeful. Think Europe, Survivor, Bonnie Tyler.
+FEEL: 80s power ballad - epic, dramatic, HOPEFUL. Think Europe "The Final Countdown", Survivor "Eye of the Tiger", Bonnie Tyler "Holding Out for a Hero" - but about saving the world through love.
 
 Generate ONLY the lyrics. Nothing else.`;
 
@@ -35,12 +43,12 @@ const WORD_CLEANUP_PROMPT = `You are a word processor. Given a list of words/phr
 1. FIX SPELLING: Correct any misspelled words
 2. TRANSLATE TO ENGLISH: If any words are in Swedish or other languages, translate them to English
 3. REMOVE DUPLICATES: Remove duplicate or very similar words
-4. SELECT THE BEST: If there are more than 15 words, select the 15 most interesting/diverse corporate buzzwords that would make a great power ballad
+4. SELECT THE BEST: If there are more than 15 words, select the 15 most inspiring/diverse words that would make a great hopeful power ballad about making the world better
 
 INPUT WORDS: {WORDS}
 
 RESPOND WITH ONLY a comma-separated list of cleaned English words. No explanations, no numbering, just the words.
-Example output: SYNERGY, DISRUPTION, INNOVATION, LEADERSHIP, GROWTH`;
+Example output: SUSTAINABILITY, HOPE, INNOVATION, FUTURE, TOGETHER`;
 
 // Preprocess words: translate, fix spelling, limit count
 export async function preprocessWords(words: string[]): Promise<string[]> {
@@ -85,9 +93,21 @@ export async function generateLyrics(
 ): Promise<string> {
   const model = genAI.getGenerativeModel({ model: "gemini-3-pro-preview" });
 
-  // Build prompt with optional crowd section - integrated throughout (ENGLISH)
+  // Build prompt with optional crowd section - extract visual details for the song
   const crowdSection = imageBase64
-    ? "\n\nTHE CROWD IN THE IMAGE:\nLook at the image and find ONE interesting detail (not clothing!) - it could be an expression, a gesture, number of people, or the energy in the room. Weave this detail SUBTLY somewhere in the song - it doesn't have to be at the beginning. Make it feel natural, not forced."
+    ? `
+
+THE HEROES IN THE IMAGE (IMPORTANT - use these details prominently!):
+Study the image carefully and identify 3-5 visual details to weave into the song:
+- How many people are there? Describe the group (a mighty crowd, a small band of warriors, etc.)
+- What's the energy/mood? (determined faces, hopeful smiles, united stance)
+- Any notable gestures or poses? (raised hands, arms crossed, leaning in)
+- The setting/environment? (office, conference room, outdoor, lighting)
+- Any standout features that make this group unique?
+
+These heroes are the SUBJECT of the song - make them feel SEEN and CELEBRATED.
+Weave at least 2-3 of these visual observations into different parts of the song.
+Example: "Fifteen warriors standing tall" or "In this room of golden light" or "With your hands raised to the sky"`
     : "";
 
   const prompt = MC_KPI_PROMPT

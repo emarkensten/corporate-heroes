@@ -58,7 +58,7 @@ export async function generateMusic(
     instrumental: false,
     model: "V5",
     prompt: lyrics,
-    style: "80s power ballad, arena rock, anthemic chorus, inspirational, emotional powerful male vocals, soaring guitar solos, synthesizer layers, dramatic drums, stadium rock, english vocals, europe style, survivor style, epic",
+    style: "80s power ballad, arena rock, anthemic chorus, inspirational, hopeful, uplifting, emotional powerful male vocals, soaring guitar solos, synthesizer layers, dramatic drums, stadium rock, english vocals, europe style, survivor style, epic love ballad",
     title: title,
     vocalGender: "m",
     callBackUrl: callBackUrl,
