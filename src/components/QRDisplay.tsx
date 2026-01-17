@@ -28,7 +28,7 @@ export function QRDisplay({ size = 200 }: QRDisplayProps) {
       {/* QR Code with glow effect */}
       <div className="relative">
         {/* Glow */}
-        <div className="absolute inset-0 bg-violet-500/20 blur-xl rounded-lg" />
+        <div className="absolute inset-0 bg-[#FF1F8E]/20 blur-xl rounded-lg" />
 
         {/* QR Container */}
         <div className="relative bg-white p-4 border-4 border-zinc-800">
@@ -50,7 +50,7 @@ export function QRDisplay({ size = 200 }: QRDisplayProps) {
         className="text-center"
       >
         <p className="font-mono text-xs text-zinc-500 mb-1">or visit</p>
-        <p className="font-mono text-sm text-violet-400 tracking-wider">
+        <p className="font-mono text-sm text-[#FF1F8E] tracking-wider">
           {joinUrl}
         </p>
       </motion.div>
