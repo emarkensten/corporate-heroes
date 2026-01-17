@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       lyrics,
+      cleanedKeywords,
     });
   } catch (error) {
     console.error("Lyrics generation error:", error);

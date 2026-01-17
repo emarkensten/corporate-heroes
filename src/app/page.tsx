@@ -76,6 +76,10 @@ export default function MainStage() {
 
       const lyricsData = await lyricsResponse.json();
       setLyrics(lyricsData.lyrics);
+      // Update buzzwords with cleaned/preprocessed keywords for accurate count
+      if (lyricsData.cleanedKeywords) {
+        setBuzzwords(lyricsData.cleanedKeywords);
+      }
       setProgress({ step: "Lyrics generated!", progress: 30 });
 
       // Step 3: Start music generation (don't wait for completion!)
