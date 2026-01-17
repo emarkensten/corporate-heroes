@@ -68,34 +68,32 @@ export async function generateGTAImage(imageBase64: string): Promise<string> {
   const model = genAI.getGenerativeModel({ model: "gemini-3-pro-image-preview" });
 
   // 80s Power Ballad LP on table - photorealistic scene
-  const prompt = `[SCENE] Photorealistic photo of a vintage vinyl LP record on a dark wooden table. Soft natural lighting. The vinyl is partially slid out of the sleeve.
+  const prompt = `[SCENE COMPOSITION] Create a photorealistic photograph of a vintage vinyl LP record lying on a dark wooden table. The LP sleeve is the main focus, photographed from a slight angle above. Soft natural lighting from a window. The vinyl record is partially slid out of the sleeve, showing the black grooves.
 
-[ALBUM COVER ON THE SLEEVE] Transform the person(s) in this photo into a classic 1980s power ballad album cover:
+[THE ALBUM COVER ON THE SLEEVE] The LP sleeve shows a classic 1980s glam rock / power ballad album cover featuring the person(s) from this photo transformed:
 
-CRITICAL - PRESERVE THESE EXACTLY:
-- The EXACT clothing they are wearing (do NOT change to leather jackets or band shirts)
-- Their facial features must be clearly recognizable
-- Their body position and pose
+- PHOTOREALISTIC portrait photography style (like Def Leppard, Bon Jovi, Europe album covers)
+- Keep their EXACT clothing - do NOT change to leather jackets or band shirts
+- Add big, voluminous 80s teased hair with hairspray volume
+- Dramatic studio lighting with purple/pink/gold gels, slight soft focus glow
+- Bold 80s makeup: defined eyebrows, dramatic eyeshadow
+- Heroic confident poses, intense gazes
+- Facial features MUST remain clearly recognizable - this is crucial
+- NO sunglasses, NO masks
 
-ADD THESE 80s ROCK STAR ELEMENTS:
-- Big, voluminous 80s teased/feathered hair (add hairspray volume!)
-- Dramatic studio lighting with purple/pink/gold gels
-- Soft focus glow effect around them
-- 80s makeup: bold eyeshadow, defined features
-- Confident, heroic expression
-- Optional: subtle accessories like a bandana, wristbands, or chains
+[ALBUM COVER TEXT ON THE SLEEVE]
+- Band name "THE CORPORATE HEROES" in chrome/metallic 80s font at the top
+- Album title "POWER ANTHEM" in smaller text below
 
-[TEXT ON SLEEVE]
-- "THE CORPORATE HEROES" in chrome/metallic 80s font at top
-- "POWER ANTHEM" smaller below
+[PHYSICAL REALISM OF THE SCENE]
+- The LP sleeve has slight wear, bent corners - a beloved album
+- Realistic paper/cardboard texture of the sleeve
+- The wooden table has visible grain
+- Soft shadows from the LP
+- Perhaps a coffee cup or plant slightly visible at the edge
+- The photo should look like it was taken with a nice camera in someone's home
 
-[PHYSICAL LP REALISM]
-- Worn sleeve with bent corners, loved album look
-- Cardboard texture visible
-- Wood grain on table
-- Soft shadows
-
-[STYLE] The LP scene is photorealistic. The album cover has 80s styling but the person keeps their original clothes.`;
+[STYLE] Photorealistic photography of a physical object (the LP), NOT an illustration. The album COVER can have the stylized 80s look, but the SCENE of the LP on the table must be photorealistic.`;
 
   // Remove data URL prefix if present
   const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
@@ -113,14 +111,20 @@ ADD THESE 80s ROCK STAR ELEMENTS:
   const response = result.response;
 
   // Debug: Log the full response structure
-  console.log("Gemini image response:", JSON.stringify({
-    candidates: response.candidates?.length,
-    parts: response.candidates?.[0]?.content?.parts?.map(p => ({
-      hasText: "text" in p,
-      hasInlineData: "inlineData" in p,
-      mimeType: "inlineData" in p ? p.inlineData?.mimeType : undefined
-    })),
-    text: response.text?.() || "no text method"
+  console.log("Gemini image response - full structure:", JSON.stringify({
+    candidatesLength: response.candidates?.length,
+    candidate0: response.candidates?.[0] ? {
+      finishReason: response.candidates[0].finishReason,
+      hasContent: !!response.candidates[0].content,
+      partsLength: response.candidates[0].content?.parts?.length,
+      parts: response.candidates[0].content?.parts?.map(p => ({
+        hasText: "text" in p,
+        textPreview: "text" in p ? (p.text as string).substring(0, 100) : undefined,
+        hasInlineData: "inlineData" in p,
+        mimeType: "inlineData" in p ? p.inlineData?.mimeType : undefined
+      }))
+    } : "no candidate",
+    promptFeedback: response.promptFeedback
   }, null, 2));
 
   // Check if response contains generated image
