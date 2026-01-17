@@ -43,28 +43,42 @@ export function WordCloud({ refreshInterval = 1000 }: WordCloudProps) {
 
   const fetchWords = useCallback(async () => {
     try {
-      const response = await fetch("/api/words");
+      const response = await fetch("/api/words", {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" }
+      });
       const data = await response.json();
+      const serverWords: Word[] = data.words || [];
 
       // Add position/style to new words, preserve existing ones
       setWords((prevWords) => {
         const prevMap = new Map(prevWords.map((w) => [w.id, w]));
+        const serverWordIds = new Set(serverWords.map(w => w.id));
 
-        return data.words.map((word: Word) => {
-          // Keep existing word with its position
-          if (prevMap.has(word.id)) {
-            return prevMap.get(word.id)!;
+        // Start with existing words that are still on server
+        const result: WordWithPosition[] = [];
+
+        // Keep all existing words that still exist on server
+        for (const prev of prevWords) {
+          if (serverWordIds.has(prev.id)) {
+            result.push(prev);
           }
+        }
 
-          // New word - assign random position and style
-          return {
-            ...word,
-            position: randomPosition(),
-            color: COLORS[Math.floor(Math.random() * COLORS.length)],
-            rotation: Math.random() * 20 - 10, // -10 to 10 degrees
-            scale: 0.8 + Math.random() * 0.6, // 0.8 to 1.4 scale
-          };
-        });
+        // Add new words from server
+        for (const word of serverWords) {
+          if (!prevMap.has(word.id)) {
+            result.push({
+              ...word,
+              position: randomPosition(),
+              color: COLORS[Math.floor(Math.random() * COLORS.length)],
+              rotation: Math.random() * 20 - 10,
+              scale: 0.8 + Math.random() * 0.6,
+            });
+          }
+        }
+
+        return result;
       });
     } catch (error) {
       console.error("Failed to fetch words:", error);

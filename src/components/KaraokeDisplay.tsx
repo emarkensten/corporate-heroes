@@ -14,16 +14,29 @@ export function KaraokeDisplay({
   isPlaying,
   buzzwords = [],
 }: KaraokeDisplayProps) {
-  // Create a Set for faster lookup (case-insensitive)
-  const buzzwordSet = useMemo(() => {
-    return new Set(buzzwords.map(w => w.toLowerCase()));
+  // Create array of buzzwords for fuzzy matching (case-insensitive)
+  const buzzwordList = useMemo(() => {
+    return buzzwords.map(w => w.toLowerCase().trim());
   }, [buzzwords]);
 
-  // Check if a word matches any buzzword
+  // Check if a word matches any buzzword (fuzzy matching)
   const isBuzzword = (word: string) => {
-    // Remove punctuation and check
+    // Remove punctuation and lowercase
     const cleanWord = word.replace(/[^\w\säöåÄÖÅ]/gi, '').toLowerCase();
-    return buzzwordSet.has(cleanWord);
+    if (cleanWord.length < 3) return false; // Skip very short words
+
+    // Check if word starts with, ends with, or equals any buzzword
+    // Also check if any buzzword starts with or equals the word
+    return buzzwordList.some(buzzword => {
+      if (buzzword.length < 3) return false;
+      return (
+        cleanWord === buzzword ||
+        cleanWord.startsWith(buzzword) ||
+        buzzword.startsWith(cleanWord) ||
+        cleanWord.includes(buzzword) ||
+        buzzword.includes(cleanWord)
+      );
+    });
   };
 
   // Parse lyrics into lines
