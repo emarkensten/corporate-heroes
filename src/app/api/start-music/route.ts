@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
 
     // Start generation - returns taskId immediately
     console.log("Starting music generation...");
-    const { taskId } = await generateMusic(lyrics, title || "Corporate Gangsta");
+    const { taskId } = await generateMusic(lyrics, title || "Arena Anthem");
     console.log("Music task started:", taskId);
 
     return NextResponse.json({

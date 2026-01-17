@@ -83,7 +83,7 @@ export default function MainStage() {
       const musicResponse = await fetch("/api/start-music", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lyrics: lyricsData.lyrics, title: "Corporate Gangsta" }),
+        body: JSON.stringify({ lyrics: lyricsData.lyrics, title: "Arena Anthem" }),
       });
 
       if (!musicResponse.ok) {
@@ -109,7 +109,8 @@ export default function MainStage() {
           setGtaImage(imageData.image);
           setProgress({ step: "Transformation complete!", progress: 80 });
         } else {
-          console.warn("Image generation failed, using original");
+          const errorData = await imageResponse.json().catch(() => ({}));
+          console.warn("Image generation failed:", errorData.error || imageResponse.status);
           setGtaImage(imageBase64);
         }
       } catch (imgErr) {
@@ -204,8 +205,8 @@ export default function MainStage() {
     <main className="min-h-screen bg-[#0a0a0a] text-white overflow-hidden">
       {/* Global background effects */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(139,92,246,0.15),transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(6,182,212,0.1),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(255,31,142,0.15),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(255,215,0,0.1),transparent_50%)]" />
       </div>
 
       {/* Global reset button - hidden in LOBBY (has its own header) */}
@@ -234,10 +235,10 @@ export default function MainStage() {
             {/* Header */}
             <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between p-6 bg-gradient-to-b from-black/80 to-transparent">
               <div className="flex items-center gap-3">
-                <Mic className="w-8 h-8 text-violet-400" />
+                <Mic className="w-8 h-8 text-[#FF1F8E]" />
                 <div>
-                  <h1 className="text-2xl font-bold tracking-tight">MC KPI</h1>
-                  <p className="text-xs text-zinc-500 font-mono">THE CORPORATE RAPPER</p>
+                  <h1 className="text-2xl font-bold tracking-tight chrome-text">The Corporate Heroes</h1>
+                  <p className="text-xs text-zinc-500 font-mono">THE ARENA ROCKERS</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -252,7 +253,7 @@ export default function MainStage() {
                 <Button
                   onClick={handleLockIn}
                   size="lg"
-                  className="h-12 px-8 text-sm font-bold bg-violet-600 hover:bg-violet-500 text-white rounded-none border-0 shadow-[0_0_20px_rgba(139,92,246,0.3)]"
+                  className="h-12 px-8 text-sm font-bold bg-[#FF1F8E] hover:bg-[#FF6BB5] text-white rounded-none border-0 shadow-[0_0_20px_rgba(255,31,142,0.3)] neon-glow-magenta"
                 >
                   <Lock className="w-4 h-4 mr-2" />
                   LOCK IN & SNAPSHOT
@@ -273,7 +274,7 @@ export default function MainStage() {
             {/* Word count indicator */}
             <div className="fixed bottom-8 left-8 z-40">
               <div className="flex items-center gap-2 text-zinc-500 font-mono text-sm">
-                <Zap className="w-4 h-4 text-violet-400" />
+                <Zap className="w-4 h-4 text-[#FFD700]" />
                 <span>Scan QR to add buzzwords</span>
               </div>
             </div>
@@ -318,7 +319,7 @@ export default function MainStage() {
           >
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold mb-2">Generating Your Track</h2>
-              <p className="text-zinc-500">MC KPI is cooking...</p>
+              <p className="text-zinc-500">The Corporate Heroes is cooking...</p>
             </div>
 
             <HackerTerminal progress={progress} />
@@ -392,39 +393,44 @@ export default function MainStage() {
             <div className="fixed top-4 left-4 z-[100] flex gap-2">
               {gtaImage && (
                 <button
-                  onClick={() => downloadBase64(gtaImage, `MC_KPI_${Date.now()}.jpg`)}
-                  className="p-2 rounded-full bg-black/50 backdrop-blur-sm border border-zinc-800 hover:border-zinc-600 hover:bg-black/70 transition-all group"
+                  onClick={() => downloadBase64(gtaImage, `CORPORATE_HEROES_${Date.now()}.jpg`)}
+                  className="p-2 rounded-full bg-black/50 backdrop-blur-sm border border-zinc-800 hover:border-[#FFD700] hover:bg-black/70 transition-all group"
                   title="Download image"
                 >
-                  <ImageIcon className="w-5 h-5 text-zinc-500 group-hover:text-zinc-300 transition-colors" />
+                  <ImageIcon className="w-5 h-5 text-zinc-500 group-hover:text-[#FFD700] transition-colors" />
                 </button>
               )}
               {audioUrl && (
                 <button
-                  onClick={() => downloadUrl(audioUrl, `MC_KPI_${Date.now()}.mp3`)}
-                  className="p-2 rounded-full bg-black/50 backdrop-blur-sm border border-zinc-800 hover:border-zinc-600 hover:bg-black/70 transition-all group"
+                  onClick={() => downloadUrl(audioUrl, `CORPORATE_HEROES_${Date.now()}.mp3`)}
+                  className="p-2 rounded-full bg-black/50 backdrop-blur-sm border border-zinc-800 hover:border-[#FFD700] hover:bg-black/70 transition-all group"
                   title="Download song"
                 >
-                  <Music className="w-5 h-5 text-zinc-500 group-hover:text-zinc-300 transition-colors" />
+                  <Music className="w-5 h-5 text-zinc-500 group-hover:text-[#FFD700] transition-colors" />
                 </button>
               )}
             </div>
 
-            {/* GTA Background Image */}
-            {gtaImage && (
-              <div
-                className="fixed inset-0 bg-cover bg-center"
-                style={{ backgroundImage: `url(${gtaImage})` }}
-              >
-                {/* Overlay gradient */}
-                <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent" />
+            {/* Split Screen Layout */}
+            <div className="relative min-h-screen flex flex-col lg:flex-row">
+              {/* LEFT SIDE - Album Cover Photo (takes remaining space) */}
+              <div className="lg:flex-1 h-[40vh] lg:h-screen relative overflow-hidden">
+                {gtaImage && (
+                  <>
+                    <div
+                      className="absolute inset-0 bg-cover bg-center"
+                      style={{ backgroundImage: `url(${gtaImage})` }}
+                    />
+                    {/* Spotlight gradient overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-transparent via-black/20 to-black/50" />
+                    {/* 80s style border glow */}
+                    <div className="absolute inset-0 shadow-[inset_0_0_100px_rgba(255,215,0,0.2)]" />
+                  </>
+                )}
               </div>
-            )}
 
-            {/* Content */}
-            <div className="relative z-10 min-h-screen flex">
-              {/* Lyrics Panel - Right side */}
-              <div className="ml-auto w-full max-w-xl h-screen bg-black/60 backdrop-blur-md border-l border-zinc-800/50">
+              {/* RIGHT SIDE - Lyrics Panel (max 800px width) */}
+              <div className="h-[60vh] lg:h-screen lg:w-full lg:max-w-[800px] bg-gradient-to-br from-black via-zinc-900 to-black border-t lg:border-t-0 lg:border-l border-[#FF1F8E]/30">
                 <KaraokeDisplay
                   lyrics={lyrics}
                   isPlaying={isPlaying}

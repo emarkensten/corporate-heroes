@@ -8,14 +8,14 @@ interface WordCloudProps {
   refreshInterval?: number;
 }
 
-// Color palette for words
+// Color palette for words - 80s Power Ballad theme
 const COLORS = [
-  "text-violet-400",
-  "text-cyan-400",
-  "text-fuchsia-400",
-  "text-emerald-400",
-  "text-amber-400",
-  "text-rose-400",
+  "text-[#FF6BB5]",      // Hot Pink
+  "text-[#00D4FF]",      // Electric Blue
+  "text-[#FFD700]",      // Neon Gold
+  "text-[#FF1F8E]",      // Electric Magenta
+  "text-[#FF6B35]",      // Sunset Orange
+  "text-[#C20A6F]",      // Deep Magenta
 ];
 
 // Generate random position avoiding QR code area (bottom-right)
@@ -80,7 +80,7 @@ export function WordCloud({ refreshInterval = 1000 }: WordCloudProps) {
   return (
     <div className="relative w-full h-full overflow-hidden">
       {/* Ambient glow */}
-      <div className="absolute inset-0 bg-gradient-radial from-violet-900/10 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-gradient-radial from-[#FF1F8E]/10 via-transparent to-transparent" />
 
       <AnimatePresence>
         {words.map((word) => (

@@ -65,8 +65,8 @@ export default function JoinPage() {
     <main className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center p-6">
       {/* Animated background gradient */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-radial from-violet-900/20 via-transparent to-transparent animate-pulse" />
-        <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-radial from-cyan-900/20 via-transparent to-transparent animate-pulse delay-1000" />
+        <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-radial from-[#FF1F8E]/20 via-transparent to-transparent animate-pulse" />
+        <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-radial from-[#FFD700]/20 via-transparent to-transparent animate-pulse delay-1000" />
       </div>
 
       <div className="relative z-10 w-full max-w-sm flex flex-col items-center gap-8">
@@ -77,13 +77,13 @@ export default function JoinPage() {
           className="text-center"
         >
           <div className="flex items-center justify-center gap-2 mb-2">
-            <Mic className="w-6 h-6 text-violet-400" />
-            <h1 className="text-2xl font-bold text-white tracking-tight">
-              MC KPI
+            <Mic className="w-6 h-6 text-[#FF1F8E]" />
+            <h1 className="text-2xl font-bold text-white tracking-tight chrome-text">
+              The Corporate Heroes
             </h1>
           </div>
           <p className="text-zinc-500 text-sm">
-            Drop your corporate buzzwords
+            Share your corporate buzzwords
           </p>
         </motion.div>
 
@@ -104,7 +104,7 @@ export default function JoinPage() {
               onChange={(e) => setWord(e.target.value.toUpperCase())}
               maxLength={200}
               disabled={status === "sending" || status === "success"}
-              className="w-full h-14 px-4 text-lg font-mono bg-zinc-900/80 border-zinc-800 text-white placeholder:text-zinc-600 focus:border-violet-500 focus:ring-violet-500/20 rounded-none uppercase tracking-wider"
+              className="w-full h-14 px-4 text-lg font-mono bg-zinc-900/80 border-zinc-800 text-white placeholder:text-zinc-600 focus:border-[#FF1F8E] focus:ring-[#FF1F8E]/20 rounded-none uppercase tracking-wider"
               autoFocus
             />
           </div>
@@ -112,7 +112,7 @@ export default function JoinPage() {
           <Button
             type="submit"
             disabled={!word.trim() || status === "sending" || status === "success"}
-            className="w-full h-14 text-lg font-bold bg-violet-600 hover:bg-violet-500 text-white rounded-none border-0 transition-all duration-200 disabled:opacity-50"
+            className="w-full h-14 text-lg font-bold bg-[#FF1F8E] hover:bg-[#FF6BB5] text-white rounded-none border-0 transition-all duration-200 disabled:opacity-50 neon-glow-magenta"
           >
             <AnimatePresence mode="wait">
               {status === "idle" && (
@@ -124,7 +124,7 @@ export default function JoinPage() {
                   className="flex items-center gap-2"
                 >
                   <Send className="w-5 h-5" />
-                  SEND TO MC KPI
+                  SEND TO THE HEROES
                 </motion.span>
               )}
               {status === "sending" && (

@@ -17,16 +17,15 @@ interface HackerTerminalProps {
 }
 
 const FAKE_LOGS: LogEntry[] = [
-  { text: "Initializing MC KPI protocol...", type: "info" },
-  { text: "Parsing corporate boredom...", type: "processing" },
-  { text: "Analyzing buzzword density...", type: "processing" },
-  { text: "Injecting gangster flow...", type: "processing" },
-  { text: "Calibrating swag coefficients...", type: "processing" },
-  { text: "Loading street credentials...", type: "info" },
-  { text: "Compiling rhyme patterns...", type: "processing" },
-  { text: "Rendering visual style...", type: "processing" },
-  { text: "Synthesizing west coast beats...", type: "processing" },
-  { text: "Optimizing flow dynamics...", type: "processing" },
+  { text: "Initializing Corporate Heroes protocol...", type: "info" },
+  { text: "Tuning power ballad frequencies...", type: "processing" },
+  { text: "Analyzing inspirational keyword density...", type: "processing" },
+  { text: "Injecting 80s arena rock energy...", type: "processing" },
+  { text: "Loading stadium lighting effects...", type: "info" },
+  { text: "Compiling anthemic chorus patterns...", type: "processing" },
+  { text: "Rendering heroic visual style...", type: "processing" },
+  { text: "Synthesizing power ballad arrangements...", type: "processing" },
+  { text: "Optimizing guitar solo trajectories...", type: "processing" },
 ];
 
 export function HackerTerminal({ progress }: HackerTerminalProps) {
@@ -68,7 +67,7 @@ export function HackerTerminal({ progress }: HackerTerminalProps) {
           </div>
           <div className="flex items-center gap-2 text-zinc-500 text-sm font-mono">
             <Terminal className="w-4 h-4" />
-            <span>mc-kpi-generator v6.9.420</span>
+            <span>corporate-heroes-generator v1.985</span>
           </div>
         </div>
 
@@ -104,7 +103,7 @@ export function HackerTerminal({ progress }: HackerTerminalProps) {
             <motion.span
               animate={{ opacity: [1, 0] }}
               transition={{ duration: 0.8, repeat: Infinity }}
-              className="w-2 h-4 bg-violet-400"
+              className="w-2 h-4 bg-[#FF1F8E]"
             />
           </div>
         </div>
@@ -115,7 +114,7 @@ export function HackerTerminal({ progress }: HackerTerminalProps) {
             <span className="text-xs text-zinc-500 font-mono uppercase">
               Generation Progress
             </span>
-            <span className="text-xs text-violet-400 font-mono">
+            <span className="text-xs text-[#FF1F8E] font-mono">
               {Math.round(progress.progress)}%
             </span>
           </div>
@@ -124,7 +123,7 @@ export function HackerTerminal({ progress }: HackerTerminalProps) {
               initial={{ width: 0 }}
               animate={{ width: `${progress.progress}%` }}
               transition={{ duration: 0.5, ease: "easeOut" }}
-              className="h-full bg-gradient-to-r from-violet-600 to-cyan-500"
+              className="h-full bg-gradient-to-r from-[#FF1F8E] to-[#FFD700]"
             />
           </div>
         </div>

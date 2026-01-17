@@ -13,8 +13,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MC KPI | The Corporate Rapper",
-  description: "Transform corporate buzzwords into gangsta rap. A live presentation experience.",
+  title: "The Corporate Heroes | Arena Rock Experience",
+  description: "Transform corporate buzzwords into 80s power ballad anthems. An inspirational arena rock experience.",
   icons: {
     icon: "/favicon.ico",
   },

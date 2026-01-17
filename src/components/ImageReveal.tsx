@@ -44,9 +44,9 @@ export function ImageReveal({ gtaImage }: ImageRevealProps) {
             repeat: Infinity,
             ease: "easeInOut",
           }}
-          className="mb-8 p-6 rounded-full bg-black/50 backdrop-blur-md border border-violet-500/30"
+          className="mb-8 p-6 rounded-full bg-black/50 backdrop-blur-md border border-[#FF1F8E]/30 spotlight-overlay"
         >
-          <Music className="w-12 h-12 text-violet-400" />
+          <Music className="w-12 h-12 text-[#FF1F8E]" />
         </motion.div>
 
         {/* Loading text */}
@@ -57,13 +57,13 @@ export function ImageReveal({ gtaImage }: ImageRevealProps) {
             transition={{ delay: 0.7 }}
             className="text-2xl md:text-3xl font-bold text-white mb-3"
           >
-            MC KPI skapar din låt...
+            The Corporate Heroes skapar din power ballad...
           </motion.h2>
 
           {/* Animated loading dots */}
           <div className="flex items-center justify-center gap-2 text-zinc-400">
             <Loader2 className="w-5 h-5 animate-spin" />
-            <span className="text-lg font-mono">Genererar musik</span>
+            <span className="text-lg font-mono">Skapar anthemisk låt</span>
           </div>
         </div>
 
@@ -84,7 +84,7 @@ export function ImageReveal({ gtaImage }: ImageRevealProps) {
                 repeat: Infinity,
                 ease: "easeInOut",
               }}
-              className="h-full w-1/3 bg-gradient-to-r from-transparent via-violet-500 to-transparent"
+              className="h-full w-1/3 bg-gradient-to-r from-transparent via-[#FF1F8E] to-transparent"
             />
           </div>
         </motion.div>

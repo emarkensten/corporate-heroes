@@ -2,29 +2,37 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-// MC KPI System Prompt - KORT VERSION (~1:30 min)
-const MC_KPI_PROMPT = `Agera som "MC KPI", en hardcore gangsterrappare (mellanchef).
-Skriv en KORT rap-låt (max 1,5 minut) baserat på orden: {KEYWORDS}.
+// The Corporate Heroes System Prompt - Power Ballad VERSION (~1:30 min)
+const MC_KPI_PROMPT = `Agera som "The Corporate Heroes", ett inspirerande 80s power ballad rockband.
+Skriv en KORT power ballad (max 1,5 minut) baserat på orden: {KEYWORDS}.
 {CROWD_SECTION}
 
 VIKTIGA INSTRUKTIONER FÖR SUNO V5:
 1. KOMPAKT STRUKTUR (max 20 rader totalt):
-   - [Intro] (2-4 rader, talad, sätt stämningen)
-   - [Verse] (max 6 rader, aggressivt flow)
-   - [Chorus] (max 4 rader, catchy och repeterbar)
-   - [Outro] (2 rader, fade out)
+   - [Intro] (2-4 rader, talad eller mjukt sjungen, sätt stämningen)
+   - [Verse] (max 6 rader, bygger känslomässig intensitet)
+   - [Chorus] (max 4 rader, anthemisk och kraftfull, lätt att sjunga med i)
+   - [Outro] (2 rader, fade out med upprepad hook)
 
 2. AD-LIBS:
-   - Använd parenteser () för bakgrundsröster i slutet av rader.
-   - Exempel: "Budgeten är sprängd (Ka-ching!)"
-   - ENDAST korta utrop som kan sjungas (Yeah!, Skrrt!, Pow!, etc.)
-   - ALDRIG ljudeffekter eller instruktioner som "(explosion)", "(fade out)", "(ljud av X)"
+   - Använd parenteser () för bakgrundsröster i slutet av rader
+   - Exempel: "Vi når våra mål (Yeah!)", "Tillsammans vi står (Ooh!)"
+   - ENDAST emotionella utrop som kan sjungas (Yeah!, Ooh!, Hey!, Woah!)
+   - ALDRIG ljudeffekter eller instruktioner som "(gitarrsolo)", "(fade out)"
 
 3. INNEHÅLL:
-   - Blanda orten-slang med "Corporate Swenglish".
-   - Var extremt dramatisk. Allt är på liv och död.
-   - Använd INTE asterisker (*) eller annan markdown-formatering.
+   - Blanda corporate buzzwords med inspirerande, emotionellt laddade metaforer
+   - Teman: uthållighet, teamwork, att övervinna motgångar, nå toppen
+   - Var EXTREMT dramatisk och emotionell. Allt handlar om att kämpa och vinna
+   - Använd INTE asterisker (*) eller markdown-formatering
+   - Inkludera upprepade hooks/fraser som är lätta att sjunga med i
    - Håll det KORT - max 20 rader totalt!
+
+4. TONALITET:
+   - Inspirerande och hoppfull (inte aggressiv)
+   - Emotionell kraft och passion
+   - "Vi gör det tillsammans" mentalitet
+   - 80-tals power ballad-känsla: episk, dramatisk, anthemisk
 
 Generera BARA texten. Inget annat snack.`;
 
@@ -36,7 +44,7 @@ export async function generateLyrics(
 
   // Build prompt with optional crowd section - TIDIGT i låten
   const crowdSection = imageBase64
-    ? "\n\nTitta på bilden av publiken. VIKTIGT: Nämn publiken DIREKT i introt eller första versen (inte i slutet!). Beskriv något specifikt du ser: antal personer, kläder, stämning, eller något unikt."
+    ? "\n\nTitta på bilden av publiken. VIKTIGT: Nämn publiken DIREKT i introt eller första versen (inte i slutet!). Beskriv något specifikt du ser: antal personer, kläder, energi, eller något unikt. Inkorporera dem som 'heroes' eller 'warriors' i narrativet."
     : "";
 
   const prompt = MC_KPI_PROMPT
@@ -66,20 +74,31 @@ export async function generateLyrics(
 export async function generateGTAImage(imageBase64: string): Promise<string> {
   const model = genAI.getGenerativeModel({ model: "gemini-3-pro-image-preview" });
 
-  // GTA group portrait prompt - optimized for crowd photos
-  const prompt = `[Composition & Zoom - Highest Priority] Re-imagine the wide-angle photo into a tightly composed, zoomed-in group portrait in Grand Theft Auto V loading screen art style. Aggressively crop background dead space. Visually compress and re-arrange people from the original periphery towards the center to create a dense, unified crowd that completely fills the frame. Individuals must be large enough to be clearly recognizable.
+  // 80s Power Ballad LP on table - photorealistic scene
+  const prompt = `[SCENE COMPOSITION] Create a photorealistic photograph of a vintage vinyl LP record lying on a dark wooden table. The LP sleeve is the main focus, photographed from a slight angle above. Soft natural lighting from a window. The vinyl record is partially slid out of the sleeve, showing the black grooves.
 
-[Hardcore Vibe & Attire] Transform the entire tightly packed group into hardcore gangsta characters.
+[THE ALBUM COVER ON THE SLEEVE] The LP sleeve shows a classic 1980s glam rock / power ballad album cover featuring the person(s) from this photo transformed:
 
-Poses & Attitude: Change passive postures to tough, aggressive hip-hop stances within the dense crowd: crossed arms, leaning with swagger, crouching in the front row. Expressions must be serious scowls and 'mean mugs' – absolutely no smiling.
+- PHOTOREALISTIC portrait photography style (like Def Leppard, Bon Jovi, Europe album covers)
+- The person(s) styled as 80s rock stars: big teased hair with volume, leather jackets, band t-shirts
+- Dramatic studio lighting with purple/pink/gold gels, slight soft focus glow
+- Heroic confident poses, intense gazes
+- Facial features MUST remain clearly recognizable - this is crucial
+- NO sunglasses, NO masks
 
-Gear: Apply heavy accessories: thick gold and diamond chains, oversized watches, rings. Clothing should be open denim vests over hoodies, basketball jerseys, and designer track jackets.
+[ALBUM COVER TEXT ON THE SLEEVE]
+- Band name "THE CORPORATE HEROES" in chrome/metallic 80s font at the top
+- Album title "POWER ANTHEM" in smaller text below
 
-Headwear & Ink: Add many snapback caps, specifying they MUST be worn backwards or sideways so foreheads remain visible. Add bandanas tied as headbands. Add extensive visible tattoos on arms (sleeves) and necks.
+[PHYSICAL REALISM OF THE SCENE]
+- The LP sleeve has slight wear, bent corners - a beloved album
+- Realistic paper/cardboard texture of the sleeve
+- The wooden table has visible grain
+- Soft shadows from the LP
+- Perhaps a coffee cup or plant slightly visible at the edge
+- The photo should look like it was taken with a nice camera in someone's home
 
-[Identity Preservation Constraint] Despite heavy styling and tight packing, individual facial features, hairstyles, and hair colors must remain distinctly recognizable. Crucially: NO sunglasses covering eyes, and NO bandanas or masks covering the lower face.
-
-[Art Style & Setting] Sunny Los Santos background with palm trees and Deco buildings tightly framing the group. Bright, high-contrast California afternoon light with warm golden tones. Bold comic book outlines and cel-shading. No text.`;
+[STYLE] Photorealistic photography of a physical object (the LP), NOT an illustration. The album COVER can have the stylized 80s look, but the SCENE of the LP on the table must be photorealistic.`;
 
   // Remove data URL prefix if present
   const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
@@ -96,6 +115,17 @@ Headwear & Ink: Add many snapback caps, specifying they MUST be worn backwards o
 
   const response = result.response;
 
+  // Debug: Log the full response structure
+  console.log("Gemini image response:", JSON.stringify({
+    candidates: response.candidates?.length,
+    parts: response.candidates?.[0]?.content?.parts?.map(p => ({
+      hasText: "text" in p,
+      hasInlineData: "inlineData" in p,
+      mimeType: "inlineData" in p ? p.inlineData?.mimeType : undefined
+    })),
+    text: response.text?.() || "no text method"
+  }, null, 2));
+
   // Check if response contains generated image
   const parts = response.candidates?.[0]?.content?.parts;
   if (parts) {
@@ -104,6 +134,12 @@ Headwear & Ink: Add many snapback caps, specifying they MUST be worn backwards o
         return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
       }
     }
+  }
+
+  // If no image, log what we got instead
+  const textResponse = response.candidates?.[0]?.content?.parts?.find(p => "text" in p);
+  if (textResponse && "text" in textResponse) {
+    console.log("Gemini returned text instead of image:", textResponse.text);
   }
 
   throw new Error("No image generated from Gemini");

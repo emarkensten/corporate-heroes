@@ -50,7 +50,7 @@ export function KaraokeDisplay({
         return (
           <span
             key={i}
-            className="text-cyan-400 bg-cyan-400/10 px-1 rounded"
+            className="text-[#FFD700] bg-[#FFD700]/10 px-1 rounded"
           >
             {word}
           </span>
@@ -77,7 +77,7 @@ export function KaraokeDisplay({
           </span>
         </div>
         {buzzwords.length > 0 && (
-          <span className="text-xs font-mono text-cyan-400">
+          <span className="text-xs font-mono text-[#FFD700]">
             {buzzwords.length} buzzwords
           </span>
         )}
@@ -96,7 +96,7 @@ export function KaraokeDisplay({
                 transition={{ delay: lineIndex * 0.02 }}
                 className="py-3 mt-4"
               >
-                <span className="text-violet-400 font-mono text-lg md:text-xl uppercase tracking-widest">
+                <span className="text-[#FF1F8E] font-mono text-lg md:text-xl uppercase tracking-widest">
                   {line.text}
                 </span>
               </motion.div>

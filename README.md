@@ -1,48 +1,35 @@
-# MC KPI - The Corporate Rapper
+# The Corporate Heroes - Arena Rock Experience
 
-En live-demo som omvandlar publikens buzzwords till en gangster rap-låt med AI-genererad musik och GTA-stiliserad bild.
+Transform corporate buzzwords into epic 80s power ballad anthems. A live presentation experience with AI-generated music and dramatic album cover visuals.
 
-## Vad det gör
+## What It Does
 
-1. **LOBBY** - Publik skickar in buzzwords via QR-kod
-2. **CAPTURE** - Tar foto på publiken (med 3-2-1 countdown)
-3. **LOADING** - AI genererar lyrics baserat på buzzwords + analyserar publiken i bilden
-4. **IMAGE_REVEAL** - Visar GTA-stiliserad bild medan musik genereras
-5. **PERFORMANCE** - Spelar upp låten med lyrics (buzzwords highlightade)
+1. **LOBBY** - Audience submits buzzwords via QR code
+2. **CAPTURE** - Take photo of the crowd (with 3-2-1 countdown)
+3. **LOADING** - AI generates power ballad lyrics analyzing the crowd
+4. **IMAGE_REVEAL** - Shows 80s album cover transformation while music generates
+5. **PERFORMANCE** - Plays the anthem with scrolling lyrics (buzzwords highlighted)
 
 ## Tech Stack
 
 - **Next.js 16** - React framework
-- **Gemini 3 Pro** - Lyrics-generering (multimodal med bildanalys)
-- **Gemini 3 Pro Image** - GTA-stiliserad bildgenerering
-- **Suno V5** - AI-musikgenerering
-- **Framer Motion** - Animationer
-- **Tailwind CSS** - Styling
+- **Gemini 3 Pro** - Lyrics generation with crowd analysis
+- **Gemini 3 Pro Image** - 80s album cover transformation
+- **Suno V5** - AI music generation (arena rock style)
+- **Framer Motion** - Animations
+- **Tailwind CSS** - 80s-inspired styling
 
-## Flöde
+## Theme
 
-```
-Buzzwords + Foto
-       ↓
-   Gemini 3 Pro (lyrics + bildanalys i ett anrop)
-       ↓
-   ┌───────────────┬────────────────┐
-   ↓               ↓
-Suno V5         Gemini 3 Pro Image
-(musik)         (GTA-bild)
-   ↓               ↓
-   └───────┬───────┘
-           ↓
-    IMAGE_REVEAL (väntar på musik)
-           ↓
-      PERFORMANCE
-```
+**Music Style:** 80s Power Ballad / Arena Rock (Europe, Survivor, Bonnie Tyler)
+**Visual Style:** Dramatic album covers with heroic poses and stage lighting
+**Energy:** Inspirational, anthemic, emotionally powerful
 
 ## Setup
 
 ### Environment Variables
 
-Skapa `.env.local`:
+Create `.env.local`:
 
 ```bash
 GEMINI_API_KEY=your_gemini_api_key
@@ -57,30 +44,12 @@ npm install
 npm run dev
 ```
 
-Öppna http://localhost:3000
+Open http://localhost:3000
 
-### Join-sidan
+### Join Page
 
-Publik går till `/join` (via QR-kod) för att skicka in buzzwords.
+Audience goes to `/join` (via QR code) to submit buzzwords.
 
 ## Deployment
 
-Deployas automatiskt till Vercel vid push till main.
-
-## Prompts
-
-### Lyrics (MC KPI)
-- Hardcore gangsterrappare (mellanchef)
-- Blandar orten-slang med Corporate Swenglish
-- Extremt dramatiskt - allt är på liv och död
-- Analyserar publiken i bilden och refererar till dem
-
-### Musik (Suno V5)
-- 90s west coast gangsta rap
-- G-funk, heavy bassline
-- Aggressiv svensk manlig röst
-
-### Bild (Gemini)
-- GTA V loading screen art style
-- High contrast, comic book shading
-- Ingen text/logotyper i bilden
+Deploys automatically to Vercel on push to main.

@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
 
     // Step 1: Generate music with Suno V5
     console.log("Starting music generation...");
-    const { taskId: musicTaskId } = await generateMusic(lyrics, title || "Corporate Gangsta");
+    const { taskId: musicTaskId } = await generateMusic(lyrics, title || "Arena Anthem");
 
     // Step 2: Wait for music to complete
     console.log("Waiting for music generation...");

@@ -42,7 +42,7 @@ interface StemSeparationResult {
 
 export async function generateMusic(
   lyrics: string,
-  title: string = "Corporate Gangsta"
+  title: string = "Arena Anthem"
 ): Promise<{ taskId: string }> {
   const apiKey = process.env.SUNO_API_KEY;
   if (!apiKey) {
@@ -50,7 +50,7 @@ export async function generateMusic(
   }
 
   // Callback URL is required by Suno API
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://corporate-gangsta.vercel.app";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://corporate-heroes.vercel.app";
   const callBackUrl = `${baseUrl}/api/suno-webhook`;
 
   const requestBody = {
@@ -58,7 +58,7 @@ export async function generateMusic(
     instrumental: false,
     model: "V5",
     prompt: lyrics,
-    style: "90s west coast gangsta rap, g-funk, heavy bassline, aggressive swedish male vocals, old school hip hop",
+    style: "80s power ballad, arena rock, anthemic chorus, inspirational, emotional powerful male vocals, soaring guitar solos, synthesizer layers, dramatic drums, stadium rock, swedish vocals, europe style, survivor style, epic",
     title: title,
     vocalGender: "m",
     callBackUrl: callBackUrl,

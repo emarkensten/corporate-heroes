@@ -11,7 +11,7 @@ export async function GET() {
 
   // Test 2: Suno API - check auth with required callBackUrl
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://corporate-gangsta.vercel.app";
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://corporate-heroes.vercel.app";
     const sunoResponse = await fetch("https://api.sunoapi.org/api/v1/generate", {
       method: "POST",
       headers: {
