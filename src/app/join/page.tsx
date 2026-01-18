@@ -20,27 +20,26 @@ export default function JoinPage() {
     setErrorMessage("");
 
     try {
-      // Split on comma and filter out empty strings
+      // Split on comma and filter out empty strings, transform to uppercase
       const words = word
         .split(",")
-        .map((w) => w.trim())
+        .map((w) => w.trim().toUpperCase())
         .filter((w) => w.length > 0);
 
       if (words.length === 0) {
         throw new Error("No valid words");
       }
 
-      // Send each word separately
-      for (const singleWord of words) {
-        const response = await fetch("/api/words", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ word: singleWord }),
-        });
+      // Send all words in a single batch request
+      const response = await fetch("/api/words", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ words }),
+      });
 
-        if (!response.ok) {
-          throw new Error("Failed to send word");
-        }
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to send words");
       }
 
       setStatus("success");
@@ -51,9 +50,9 @@ export default function JoinPage() {
         setStatus("idle");
         inputRef.current?.focus();
       }, 1500);
-    } catch {
+    } catch (err) {
       setStatus("error");
-      setErrorMessage("Could not send. Try again.");
+      setErrorMessage(err instanceof Error ? err.message : "Could not send. Try again.");
       setTimeout(() => {
         setStatus("idle");
         inputRef.current?.focus();
@@ -101,11 +100,14 @@ export default function JoinPage() {
               type="text"
               placeholder="SYNERGY, AI, DISRUPTION..."
               value={word}
-              onChange={(e) => setWord(e.target.value.toUpperCase())}
+              onChange={(e) => setWord(e.target.value)}
               maxLength={2000}
               disabled={status === "sending" || status === "success"}
               className="w-full h-14 px-4 text-lg font-mono bg-zinc-900/80 border-zinc-800 text-white placeholder:text-zinc-600 focus:border-[#FF1F8E] focus:ring-[#FF1F8E]/20 rounded-none uppercase tracking-wider"
               autoFocus
+              autoCapitalize="characters"
+              autoCorrect="on"
+              spellCheck={false}
             />
           </div>
 

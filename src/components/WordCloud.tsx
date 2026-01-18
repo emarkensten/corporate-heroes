@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Word } from "@/lib/types";
 
@@ -38,15 +38,36 @@ interface WordWithPosition extends Word {
   scale: number;
 }
 
-export function WordCloud({ refreshInterval = 1000 }: WordCloudProps) {
+export function WordCloud({ refreshInterval = 3000 }: WordCloudProps) {
   const [words, setWords] = useState<WordWithPosition[]>([]);
+  const isLoadingRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchWords = useCallback(async () => {
+    // Skip if already loading (use ref for synchronous check)
+    if (isLoadingRef.current) return;
+    isLoadingRef.current = true;
+
+    // Abort previous request if still pending
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create new abort controller for this request
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
       const response = await fetch("/api/words", {
         cache: "no-store",
-        headers: { "Cache-Control": "no-cache" }
+        headers: { "Cache-Control": "no-cache" },
+        signal: controller.signal,
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
       const data = await response.json();
       const serverWords: Word[] = data.words || [];
 
@@ -81,14 +102,33 @@ export function WordCloud({ refreshInterval = 1000 }: WordCloudProps) {
         return result;
       });
     } catch (error) {
+      // Ignore abort errors
+      if (error instanceof Error && error.name === "AbortError") {
+        return;
+      }
       console.error("Failed to fetch words:", error);
+    } finally {
+      // Only clear loading if this is still the current controller
+      if (abortControllerRef.current === controller) {
+        isLoadingRef.current = false;
+      }
     }
   }, []);
 
   useEffect(() => {
+    // Initial fetch
     fetchWords();
+
+    // Set up polling interval (default 3 seconds)
     const interval = setInterval(fetchWords, refreshInterval);
-    return () => clearInterval(interval);
+
+    // Cleanup
+    return () => {
+      clearInterval(interval);
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [fetchWords, refreshInterval]);
 
   return (

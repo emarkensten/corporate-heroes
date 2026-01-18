@@ -2,6 +2,46 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
+// Retry configuration
+const MAX_RETRIES = 3;
+const BASE_DELAY_MS = 1000;
+
+// Exponential backoff retry wrapper
+async function withRetry<T>(
+  operation: () => Promise<T>,
+  context: string
+): Promise<T> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+
+      // Don't retry on certain errors
+      const errorMessage = lastError.message.toLowerCase();
+      if (
+        errorMessage.includes("invalid api key") ||
+        errorMessage.includes("quota exceeded") ||
+        errorMessage.includes("safety")
+      ) {
+        throw lastError;
+      }
+
+      // Calculate delay with exponential backoff
+      const delay = BASE_DELAY_MS * Math.pow(2, attempt);
+      console.log(
+        `[${context}] Attempt ${attempt + 1}/${MAX_RETRIES} failed: ${lastError.message}. Retrying in ${delay}ms...`
+      );
+
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+
+  throw lastError || new Error(`${context} failed after ${MAX_RETRIES} retries`);
+}
+
 // The Corporate Heroes System Prompt - Power Ballad VERSION (~1:30 min) - ENGLISH
 const MC_KPI_PROMPT = `You are the songwriter for "The Corporate Heroes", an 80s power ballad rock band.
 
@@ -64,8 +104,10 @@ export async function preprocessWords(words: string[]): Promise<string[]> {
   const prompt = WORD_CLEANUP_PROMPT.replace("{WORDS}", words.join(", "));
 
   try {
-    const result = await model.generateContent(prompt);
-    const cleanedText = result.response.text().trim();
+    const cleanedText = await withRetry(async () => {
+      const result = await model.generateContent(prompt);
+      return result.response.text().trim();
+    }, "preprocessWords");
 
     // Parse the comma-separated response
     const cleanedWords = cleanedText
@@ -117,21 +159,26 @@ Example: "Fifteen warriors standing tall" or "In this room of golden light" or "
   // If image provided, send as multimodal request (one API call)
   if (imageBase64) {
     const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
-    const result = await model.generateContent([
-      prompt,
-      {
-        inlineData: {
-          mimeType: "image/jpeg",
-          data: base64Data,
+
+    return withRetry(async () => {
+      const result = await model.generateContent([
+        prompt,
+        {
+          inlineData: {
+            mimeType: "image/jpeg",
+            data: base64Data,
+          },
         },
-      },
-    ]);
-    return result.response.text().replace(/\*+/g, '');
+      ]);
+      return result.response.text().replace(/\*+/g, '');
+    }, "generateLyrics (with image)");
   }
 
   // No image - text only
-  const result = await model.generateContent(prompt);
-  return result.response.text().replace(/\*+/g, '');
+  return withRetry(async () => {
+    const result = await model.generateContent(prompt);
+    return result.response.text().replace(/\*+/g, '');
+  }, "generateLyrics");
 }
 
 export async function generateGTAImage(imageBase64: string): Promise<string> {
@@ -172,50 +219,52 @@ export async function generateGTAImage(imageBase64: string): Promise<string> {
   // Remove data URL prefix if present
   const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
 
-  const result = await model.generateContent([
-    prompt,
-    {
-      inlineData: {
-        mimeType: "image/jpeg",
-        data: base64Data,
+  return withRetry(async () => {
+    const result = await model.generateContent([
+      prompt,
+      {
+        inlineData: {
+          mimeType: "image/jpeg",
+          data: base64Data,
+        },
       },
-    },
-  ]);
+    ]);
 
-  const response = result.response;
+    const response = result.response;
 
-  // Debug: Log the full response structure
-  console.log("Gemini image response - full structure:", JSON.stringify({
-    candidatesLength: response.candidates?.length,
-    candidate0: response.candidates?.[0] ? {
-      finishReason: response.candidates[0].finishReason,
-      hasContent: !!response.candidates[0].content,
-      partsLength: response.candidates[0].content?.parts?.length,
-      parts: response.candidates[0].content?.parts?.map(p => ({
-        hasText: "text" in p,
-        textPreview: "text" in p ? (p.text as string).substring(0, 100) : undefined,
-        hasInlineData: "inlineData" in p,
-        mimeType: "inlineData" in p ? p.inlineData?.mimeType : undefined
-      }))
-    } : "no candidate",
-    promptFeedback: response.promptFeedback
-  }, null, 2));
+    // Debug: Log the full response structure
+    console.log("Gemini image response - full structure:", JSON.stringify({
+      candidatesLength: response.candidates?.length,
+      candidate0: response.candidates?.[0] ? {
+        finishReason: response.candidates[0].finishReason,
+        hasContent: !!response.candidates[0].content,
+        partsLength: response.candidates[0].content?.parts?.length,
+        parts: response.candidates[0].content?.parts?.map(p => ({
+          hasText: "text" in p,
+          textPreview: "text" in p ? (p.text as string).substring(0, 100) : undefined,
+          hasInlineData: "inlineData" in p,
+          mimeType: "inlineData" in p ? p.inlineData?.mimeType : undefined
+        }))
+      } : "no candidate",
+      promptFeedback: response.promptFeedback
+    }, null, 2));
 
-  // Check if response contains generated image
-  const parts = response.candidates?.[0]?.content?.parts;
-  if (parts) {
-    for (const part of parts) {
-      if ("inlineData" in part && part.inlineData) {
-        return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+    // Check if response contains generated image
+    const parts = response.candidates?.[0]?.content?.parts;
+    if (parts) {
+      for (const part of parts) {
+        if ("inlineData" in part && part.inlineData) {
+          return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+        }
       }
     }
-  }
 
-  // If no image, log what we got instead
-  const textResponse = response.candidates?.[0]?.content?.parts?.find(p => "text" in p);
-  if (textResponse && "text" in textResponse) {
-    console.log("Gemini returned text instead of image:", textResponse.text);
-  }
+    // If no image, log what we got instead
+    const textResponse = response.candidates?.[0]?.content?.parts?.find(p => "text" in p);
+    if (textResponse && "text" in textResponse) {
+      console.log("Gemini returned text instead of image:", textResponse.text);
+    }
 
-  throw new Error("No image generated from Gemini");
+    throw new Error("No image generated from Gemini");
+  }, "generateGTAImage");
 }

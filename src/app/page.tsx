@@ -27,6 +27,7 @@ export default function MainStage() {
   const [error, setError] = useState<string | null>(null);
   const [musicTaskId, setMusicTaskId] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
+  const isCapturingRef = useRef(false); // Ref for immediate synchronous check
   const pollStartTime = useRef<number>(0);
   const pollFailures = useRef<number>(0);
   const MAX_POLL_TIME = 180000; // 3 minutes max
@@ -38,8 +39,9 @@ export default function MainStage() {
 
   // Capture image and start generation
   const handleCapture = useCallback(async (imageBase64: string) => {
-    // Prevent double-click
-    if (isCapturing) return;
+    // Immediate synchronous check using ref to prevent double-click
+    if (isCapturingRef.current) return;
+    isCapturingRef.current = true;
     setIsCapturing(true);
 
     setCapturedImage(imageBase64);
@@ -131,9 +133,10 @@ export default function MainStage() {
       console.error("Generation error:", err);
       setError(err instanceof Error ? err.message : "Something went wrong");
       setProgress({ step: "Error occurred", progress: 0 });
+      isCapturingRef.current = false;
       setIsCapturing(false);
     }
-  }, [isCapturing]);
+  }, []);
 
   // Poll for music completion in IMAGE_REVEAL state
   useEffect(() => {
@@ -142,7 +145,9 @@ export default function MainStage() {
     console.log("Starting music polling for task:", musicTaskId);
     pollStartTime.current = Date.now();
     pollFailures.current = 0;
-    setIsCapturing(false); // Reset capture guard
+    // Reset capture guard
+    isCapturingRef.current = false;
+    setIsCapturing(false);
 
     const pollInterval = setInterval(async () => {
       // Check for timeout
@@ -198,6 +203,7 @@ export default function MainStage() {
     setProgress({ step: "", progress: 0 });
     setError(null);
     setMusicTaskId(null);
+    isCapturingRef.current = false;
     setIsCapturing(false);
     setAppState("LOBBY");
   }, []);
@@ -267,7 +273,7 @@ export default function MainStage() {
 
             {/* Word Cloud - Full screen */}
             <div className="absolute inset-0 pt-24">
-              <WordCloud refreshInterval={1000} />
+              <WordCloud refreshInterval={3000} />
             </div>
 
             {/* QR Code - Bottom right (high z-index to stay above words) */}
