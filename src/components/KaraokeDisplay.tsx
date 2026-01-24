@@ -23,12 +23,12 @@ export function KaraokeDisplay({
   const isBuzzword = (word: string) => {
     // Remove punctuation and lowercase
     const cleanWord = word.replace(/[^\w\säöåÄÖÅ]/gi, '').toLowerCase();
-    if (cleanWord.length < 3) return false; // Skip very short words
+    if (cleanWord.length < 2) return false; // Skip single-char words (allow AI, UX, UI)
 
     // Check if word starts with, ends with, or equals any buzzword
     // Also check if any buzzword starts with or equals the word
     return buzzwordList.some(buzzword => {
-      if (buzzword.length < 3) return false;
+      if (buzzword.length < 2) return false;
       return (
         cleanWord === buzzword ||
         cleanWord.startsWith(buzzword) ||
