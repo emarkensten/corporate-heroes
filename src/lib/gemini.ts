@@ -95,12 +95,12 @@ Example output: SUSTAINABILITY, HOPE, INNOVATION, FUTURE, TOGETHER`;
 export async function preprocessWords(words: string[]): Promise<string[]> {
   if (words.length === 0) return [];
 
-  // Use gemini-3-flash with thinking disabled for fast preprocessing
+  // Use gemini-3-flash with minimal thinking for fastest preprocessing
   const model = genAI.getGenerativeModel({
     model: "gemini-3-flash-preview",
     generationConfig: {
       // @ts-expect-error - thinkingConfig not in types yet but supported by API
-      thinkingConfig: { thinkingBudget: 0 }
+      thinkingConfig: { thinkingLevel: "minimal" }
     }
   });
 
