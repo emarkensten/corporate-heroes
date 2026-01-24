@@ -13,6 +13,7 @@ export function WebcamCapture({ onCapture }: WebcamCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
@@ -209,8 +210,50 @@ export function WebcamCapture({ onCapture }: WebcamCaptureProps) {
   }, [onCapture]);
 
   const startCountdown = useCallback(() => {
-    setCountdown(3);
+    setCountdown(5);
   }, []);
+
+  // Handle file upload (hidden feature for testing)
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result;
+      if (typeof result === "string") {
+        onCapture(result);
+      }
+    };
+    reader.readAsDataURL(file);
+
+    // Reset input so same file can be selected again
+    e.target.value = "";
+  }, [onCapture]);
+
+  // Keyboard shortcuts: U for file upload, Space to start countdown
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Skip if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      // U key - open file picker (hidden test feature)
+      if (e.key === "u" || e.key === "U") {
+        fileInputRef.current?.click();
+      }
+
+      // Spacebar - start countdown (if not already running)
+      if (e.code === "Space" && countdown === null && stream) {
+        e.preventDefault();
+        startCountdown();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [countdown, stream, startCountdown]);
 
   // Get camera label with fallback
   const getCameraLabel = (camera: MediaDeviceInfo, index: number) => {
@@ -341,6 +384,15 @@ export function WebcamCapture({ onCapture }: WebcamCaptureProps) {
 
       {/* Hidden canvas for capture */}
       <canvas ref={canvasRef} className="hidden" />
+
+      {/* Hidden file input for test uploads (press U to trigger) */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileUpload}
+      />
 
       {/* Capture button */}
       <motion.div

@@ -52,7 +52,7 @@ THE THEME: This is a LOVE SONG and TRIBUTE to the heroes in the audience - peopl
 - Building a better world together (Agenda 2030 spirit)
 - The audience ARE the heroes - celebrate them!
 
-TASK: Write a powerful, emotional power ballad (max 20 lines) inspired by these words from the audience: {KEYWORDS}
+TASK: Write a powerful, emotional power ballad (max 15 lines) inspired by these words from the audience: {KEYWORDS}
 {CROWD_SECTION}
 
 CREATIVE APPROACH:
@@ -62,13 +62,14 @@ CREATIVE APPROACH:
 - Celebrate the people fighting for a better tomorrow
 - Be ORIGINAL - vary openings, perspectives, narratives
 
-STRUCTURE (flexible):
-- Use [Intro], [Verse], [Chorus], [Bridge], [Outro] as needed
-- DON'T always start the same way - vary it!
-- Ideas: a vision of the future, a call to arms, a love letter to Earth
+STRUCTURE:
+- [Verse] - Set the scene, weave in keywords (4-5 lines)
+- [Chorus] - The hopeful hook, repeat it (4-5 lines)
+- [Outro] - Epic ending, call to action (3-4 lines)
+- NO bridge - keep it punchy!
 
 TECHNICAL RULES FOR SUNO:
-- Max 20 lines total
+- Max 15 lines total
 - Parentheses () only for backing vocals: (Yeah!), (Ooh!), (Hey!)
 - NO asterisks, instructions, or sound effects
 - One strong hopeful hook that repeats
