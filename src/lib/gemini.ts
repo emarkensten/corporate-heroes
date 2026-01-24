@@ -95,8 +95,14 @@ Example output: SUSTAINABILITY, HOPE, INNOVATION, FUTURE, TOGETHER`;
 export async function preprocessWords(words: string[]): Promise<string[]> {
   if (words.length === 0) return [];
 
-  // Always call Gemini to translate/clean keywords (even for small lists)
-  const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+  // Use gemini-3-flash with thinking disabled for fast preprocessing
+  const model = genAI.getGenerativeModel({
+    model: "gemini-3-flash-preview",
+    generationConfig: {
+      // @ts-expect-error - thinkingConfig not in types yet but supported by API
+      thinkingConfig: { thinkingBudget: 0 }
+    }
+  });
 
   const prompt = WORD_CLEANUP_PROMPT.replace("{WORDS}", words.join(", "));
 
