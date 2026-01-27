@@ -11,7 +11,7 @@ import { KaraokeDisplay } from "@/components/KaraokeDisplay";
 import { StemPlayer } from "@/components/StemPlayer";
 import { ImageReveal } from "@/components/ImageReveal";
 import { AppState } from "@/lib/types";
-import { Lock, RotateCcw, Zap, Mic, Image as ImageIcon, Music } from "lucide-react";
+import { Lock, RotateCcw, Zap, Mic, Image as ImageIcon, Music, Camera } from "lucide-react";
 import { downloadBase64, downloadUrl } from "@/lib/download";
 
 export default function MainStage() {
@@ -188,6 +188,22 @@ export default function MainStage() {
     return () => clearInterval(pollInterval);
   }, [appState, musicTaskId]);
 
+  // Retry without losing buzzwords - go back to capture
+  const handleRetry = useCallback(() => {
+    // Reset generation state but keep buzzwords
+    setCapturedImage(null);
+    setGtaImage(null);
+    setLyrics("");
+    setAudioUrl("");
+    setIsPlaying(false);
+    setProgress({ step: "", progress: 0 });
+    setError(null);
+    setMusicTaskId(null);
+    isCapturingRef.current = false;
+    setIsCapturing(false);
+    setAppState("CAPTURE");
+  }, []);
+
   // Reset to lobby
   const handleReset = useCallback(async () => {
     // Clear words
@@ -342,14 +358,24 @@ export default function MainStage() {
                 className="mt-8 p-4 bg-red-900/20 border border-red-800 text-red-400 max-w-md text-center"
               >
                 <p className="font-mono text-sm">{error}</p>
-                <Button
-                  onClick={handleReset}
-                  variant="outline"
-                  className="mt-4 border-red-800 text-red-400"
-                >
-                  <RotateCcw className="w-4 h-4 mr-2" />
-                  Start Over
-                </Button>
+                <div className="mt-4 flex gap-3 justify-center">
+                  <Button
+                    onClick={handleRetry}
+                    variant="outline"
+                    className="border-violet-600 text-violet-400 hover:bg-violet-600/20"
+                  >
+                    <Camera className="w-4 h-4 mr-2" />
+                    Retry
+                  </Button>
+                  <Button
+                    onClick={handleReset}
+                    variant="outline"
+                    className="border-red-800 text-red-400"
+                  >
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Start Over
+                  </Button>
+                </div>
               </motion.div>
             )}
           </motion.div>
@@ -375,14 +401,24 @@ export default function MainStage() {
               >
                 <div className="p-6 bg-red-900/20 border border-red-800 text-red-400 max-w-md text-center rounded-lg">
                   <p className="font-mono text-sm mb-4">{error}</p>
-                  <Button
-                    onClick={handleReset}
-                    variant="outline"
-                    className="border-red-800 text-red-400"
-                  >
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    Start Over
-                  </Button>
+                  <div className="flex gap-3 justify-center">
+                    <Button
+                      onClick={handleRetry}
+                      variant="outline"
+                      className="border-violet-600 text-violet-400 hover:bg-violet-600/20"
+                    >
+                      <Camera className="w-4 h-4 mr-2" />
+                      Retry
+                    </Button>
+                    <Button
+                      onClick={handleReset}
+                      variant="outline"
+                      className="border-red-800 text-red-400"
+                    >
+                      <RotateCcw className="w-4 h-4 mr-2" />
+                      Start Over
+                    </Button>
+                  </div>
                 </div>
               </motion.div>
             )}

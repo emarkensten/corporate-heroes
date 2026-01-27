@@ -46,10 +46,10 @@ export function WebcamCapture({ onCapture }: WebcamCaptureProps) {
         return;
       }
 
-      // Build video constraints
+      // Build video constraints - request 4K for maximum quality (camera will give best it can)
       const videoConstraints: MediaTrackConstraints = {
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
+        width: { ideal: 3840 },
+        height: { ideal: 2160 },
       };
 
       // Use specific device if provided, otherwise default to user-facing
@@ -190,9 +190,9 @@ export function WebcamCapture({ onCapture }: WebcamCaptureProps) {
       return;
     }
 
-    // Maximum resolution for crowd analysis - capture as much detail as possible
+    // High quality for crowd analysis - match upload resolution
     // Safety limit: 3.6MB (80% of Vercel's 4.5MB limit for headroom)
-    const MAX_WIDTH = 5120; // 5K for maximum facial detail in crowd shots
+    const MAX_WIDTH = 2560; // 2.5K - same as upload, Gemini handles fine with low thinking
     const scale = Math.min(1, MAX_WIDTH / video.videoWidth);
     canvas.width = Math.round(video.videoWidth * scale);
     canvas.height = Math.round(video.videoHeight * scale);
@@ -236,65 +236,144 @@ export function WebcamCapture({ onCapture }: WebcamCaptureProps) {
     setCountdown(5);
   }, []);
 
-  // Handle file upload (hidden feature for testing)
-  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // Process image blob/file through compression pipeline
+  const processImageBlob = useCallback(async (blob: Blob) => {
+    return new Promise<void>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result;
+        if (typeof result === "string") {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+              console.error('Failed to get canvas context');
+              resolve();
+              return;
+            }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const result = event.target?.result;
-      if (typeof result === "string") {
-        // Compress uploaded image same as webcam capture
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          if (!ctx) {
-            console.error('Failed to get canvas context');
-            return;
-          }
+            // High quality for crowd analysis - same as webcam
+            const MAX_WIDTH = 2560; // 2.5K - high quality, Gemini handles fine
+            const scale = Math.min(1, MAX_WIDTH / img.width);
+            canvas.width = Math.round(img.width * scale);
+            canvas.height = Math.round(img.height * scale);
 
-          // Maximum resolution for crowd analysis - same as webcam
-          const MAX_WIDTH = 5120; // 5K for maximum facial detail
-          const scale = Math.min(1, MAX_WIDTH / img.width);
-          canvas.width = Math.round(img.width * scale);
-          canvas.height = Math.round(img.height * scale);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-          // Try high quality first, fall back if too large
-          let compressedBase64 = canvas.toDataURL('image/jpeg', 0.92);
-          let sizeInMB = (compressedBase64.length * 0.75) / (1024 * 1024);
-
-          if (sizeInMB > 3.6) {
-            console.log(`Uploaded image ${sizeInMB.toFixed(1)}MB too large, reducing quality...`);
-            compressedBase64 = canvas.toDataURL('image/jpeg', 0.85);
-            sizeInMB = (compressedBase64.length * 0.75) / (1024 * 1024);
+            // Try high quality first, fall back if too large
+            let compressedBase64 = canvas.toDataURL('image/jpeg', 0.92);
+            let sizeInMB = (compressedBase64.length * 0.75) / (1024 * 1024);
 
             if (sizeInMB > 3.6) {
-              compressedBase64 = canvas.toDataURL('image/jpeg', 0.75);
+              console.log(`Uploaded image ${sizeInMB.toFixed(1)}MB too large, reducing quality...`);
+              compressedBase64 = canvas.toDataURL('image/jpeg', 0.85);
               sizeInMB = (compressedBase64.length * 0.75) / (1024 * 1024);
 
               if (sizeInMB > 3.6) {
-                console.warn(`Uploaded image ${sizeInMB.toFixed(1)}MB exceeds safe limit even at 0.75 quality`);
-                setError(`Image too large (${sizeInMB.toFixed(1)}MB). Please choose a smaller image.`);
-                return;
+                compressedBase64 = canvas.toDataURL('image/jpeg', 0.75);
+                sizeInMB = (compressedBase64.length * 0.75) / (1024 * 1024);
+
+                if (sizeInMB > 3.6) {
+                  console.warn(`Uploaded image ${sizeInMB.toFixed(1)}MB exceeds safe limit even at 0.75 quality`);
+                  setError(`Image too large (${sizeInMB.toFixed(1)}MB). Please choose a smaller image.`);
+                  resolve();
+                  return;
+                }
               }
             }
-          }
 
-          console.log(`Uploaded image: ${canvas.width}x${canvas.height}, ${sizeInMB.toFixed(2)}MB`);
-          onCapture(compressedBase64);
-        };
-        img.src = result;
+            console.log(`Uploaded image: ${canvas.width}x${canvas.height}, ${sizeInMB.toFixed(2)}MB`);
+            onCapture(compressedBase64);
+            resolve();
+          };
+          img.src = result;
+        } else {
+          resolve();
+        }
+      };
+      reader.readAsDataURL(blob);
+    });
+  }, [onCapture]);
+
+  // Handle file upload (hidden feature for testing)
+  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check if file is HEIC (by MIME type or extension)
+    const isHeic = file.type === "image/heic" ||
+                   file.type === "image/heif" ||
+                   file.name.toLowerCase().endsWith(".heic") ||
+                   file.name.toLowerCase().endsWith(".heif");
+
+    if (isHeic) {
+      console.log("Detected HEIC file:", file.name, "Size:", file.size);
+
+      // Strategy 1: Try createImageBitmap (best codec support)
+      // Strategy 2: Try Image element (fallback)
+      // Strategy 3: Try heic2any library (last resort)
+      const tryNativeDecode = async (): Promise<boolean> => {
+        // First try createImageBitmap - often has better codec support
+        try {
+          const bitmap = await createImageBitmap(file);
+          console.log("createImageBitmap HEIC decode successful:", bitmap.width, "x", bitmap.height);
+          bitmap.close();
+          await processImageBlob(file);
+          return true;
+        } catch (bitmapErr) {
+          console.log("createImageBitmap failed:", bitmapErr);
+        }
+
+        // Fallback to Image element
+        return new Promise((resolve) => {
+          const img = new Image();
+          const url = URL.createObjectURL(file);
+
+          img.onload = () => {
+            console.log("Image element HEIC decode successful:", img.width, "x", img.height);
+            URL.revokeObjectURL(url);
+            processImageBlob(file).then(() => resolve(true));
+          };
+
+          img.onerror = () => {
+            console.log("Image element HEIC decode also failed, trying heic2any...");
+            URL.revokeObjectURL(url);
+            resolve(false);
+          };
+
+          img.src = url;
+        });
+      };
+
+      const nativeSuccess = await tryNativeDecode();
+
+      if (!nativeSuccess) {
+        // Native decode failed, try heic2any library
+        try {
+          const heic2any = (await import("heic2any")).default;
+          const jpegBlob = await heic2any({
+            blob: file,
+            toType: "image/jpeg",
+            quality: 0.95,
+          });
+          const blob = Array.isArray(jpegBlob) ? jpegBlob[0] : jpegBlob;
+          console.log("heic2any conversion complete, size:", blob.size);
+          await processImageBlob(blob);
+        } catch (err: unknown) {
+          const errorObj = err as { code?: number; message?: string };
+          console.error("heic2any also failed:", errorObj.code, errorObj.message);
+          setError("HEIC format not supported. Quick fix: On iPhone, screenshot the photo and AirDrop the screenshot instead (screenshots are PNG).");
+        }
       }
-    };
-    reader.readAsDataURL(file);
+    } else {
+      // Regular image - process directly
+      await processImageBlob(file);
+    }
 
     // Reset input so same file can be selected again
     e.target.value = "";
-  }, [onCapture]);
+  }, [processImageBlob]);
 
   // Keyboard shortcuts: U for file upload, Space to start countdown
   useEffect(() => {
@@ -454,7 +533,7 @@ export function WebcamCapture({ onCapture }: WebcamCaptureProps) {
       <input
         type="file"
         ref={fileInputRef}
-        accept="image/*"
+        accept="image/*,.heic,.heif"
         className="hidden"
         onChange={handleFileUpload}
       />

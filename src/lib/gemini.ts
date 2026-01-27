@@ -84,12 +84,14 @@ const WORD_CLEANUP_PROMPT = `You are a word processor. Given a list of words/phr
 1. FIX SPELLING: Correct any misspelled words
 2. TRANSLATE TO ENGLISH: If any words are in Swedish or other languages, translate them to English
 3. REMOVE DUPLICATES: Remove duplicate or very similar words
-4. SELECT THE BEST: If there are more than 15 words, select the 15 most inspiring/diverse words that would make a great hopeful power ballad about making the world better
+4. SELECT THE BEST: If there are more than 15 words, select the 15 most inspiring/diverse words
+
+IMPORTANT: Do NOT add any new words. Only return words from the input list (cleaned/translated). Never invent or add words that weren't provided.
 
 INPUT WORDS: {WORDS}
 
 RESPOND WITH ONLY a comma-separated list of cleaned English words. No explanations, no numbering, just the words.
-Example output: SUSTAINABILITY, HOPE, INNOVATION, FUTURE, TOGETHER`;
+Example: If input is "HÅLLBARHET, hope, HOPP" → output: SUSTAINABILITY, HOPE`;
 
 // Preprocess words: translate, fix spelling, limit count
 export async function preprocessWords(words: string[]): Promise<string[]> {
@@ -136,7 +138,15 @@ export async function generateLyrics(
   keywords: string[],
   imageBase64?: string
 ): Promise<string> {
-  const model = genAI.getGenerativeModel({ model: "gemini-3-pro-preview" });
+  console.log("[generateLyrics] Starting with", keywords.length, "keywords, image:", imageBase64 ? `${Math.round(imageBase64.length / 1024)}KB` : "none");
+  // Use low thinking level for faster response - lyrics don't need deep reasoning
+  const model = genAI.getGenerativeModel({
+    model: "gemini-3-pro-preview",
+    generationConfig: {
+      // @ts-expect-error - thinkingConfig not in types yet but supported by API
+      thinkingConfig: { thinkingLevel: "low" }
+    }
+  });
 
   // Build prompt with optional crowd section - extract visual details for the song
   const crowdSection = imageBase64
@@ -162,8 +172,10 @@ Example: "Fifteen warriors standing tall" or "In this room of golden light" or "
   // If image provided, send as multimodal request (one API call)
   if (imageBase64) {
     const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+    console.log("[generateLyrics] Sending multimodal request to Gemini, image size:", Math.round(base64Data.length / 1024), "KB");
 
     return withRetry(async () => {
+      console.log("[generateLyrics] API call starting...");
       const result = await model.generateContent([
         prompt,
         {
@@ -173,6 +185,7 @@ Example: "Fifteen warriors standing tall" or "In this room of golden light" or "
           },
         },
       ]);
+      console.log("[generateLyrics] API call completed!");
       return result.response.text().replace(/\*+/g, '');
     }, "generateLyrics (with image)");
   }
