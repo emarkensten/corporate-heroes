@@ -190,9 +190,9 @@ export function WebcamCapture({ onCapture }: WebcamCaptureProps) {
       return;
     }
 
-    // Compress: scale down to max 1920px width (Full HD) for best quality within Vercel 4.5MB limit
-    // With 0.85 quality, this typically results in 300-500KB (well under 3.6MB safe limit)
-    const MAX_WIDTH = 1920;
+    // Maximum resolution for crowd analysis - capture as much detail as possible
+    // Safety limit: 3.6MB (80% of Vercel's 4.5MB limit for headroom)
+    const MAX_WIDTH = 4096; // 4K for maximum facial detail in crowd shots
     const scale = Math.min(1, MAX_WIDTH / video.videoWidth);
     canvas.width = Math.round(video.videoWidth * scale);
     canvas.height = Math.round(video.videoHeight * scale);
@@ -200,17 +200,30 @@ export function WebcamCapture({ onCapture }: WebcamCaptureProps) {
     // Draw scaled video frame to canvas
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    // Convert to base64 with high quality compression (0.85)
-    const imageBase64 = canvas.toDataURL("image/jpeg", 0.85);
+    // Try high quality first (0.92), fall back to lower quality if too large
+    let imageBase64 = canvas.toDataURL("image/jpeg", 0.92);
+    let sizeInMB = (imageBase64.length * 0.75) / (1024 * 1024);
 
-    // Safety check: Vercel has 4.5MB limit, warn if approaching (3.6MB = 80% limit)
-    const sizeInMB = (imageBase64.length * 0.75) / (1024 * 1024); // base64 to bytes
+    // Dynamic quality adjustment if image exceeds safe limit
     if (sizeInMB > 3.6) {
-      console.warn(`Image size ${sizeInMB.toFixed(1)}MB exceeds safe limit of 3.6MB`);
-      setError(`Image too large (${sizeInMB.toFixed(1)}MB). Please try a different angle or lighting.`);
-      setIsCapturing(false);
-      return;
+      console.log(`Initial size ${sizeInMB.toFixed(1)}MB too large, reducing quality...`);
+      imageBase64 = canvas.toDataURL("image/jpeg", 0.85);
+      sizeInMB = (imageBase64.length * 0.75) / (1024 * 1024);
+
+      if (sizeInMB > 3.6) {
+        imageBase64 = canvas.toDataURL("image/jpeg", 0.75);
+        sizeInMB = (imageBase64.length * 0.75) / (1024 * 1024);
+
+        if (sizeInMB > 3.6) {
+          console.warn(`Image size ${sizeInMB.toFixed(1)}MB exceeds safe limit even at 0.75 quality`);
+          setError(`Image too large (${sizeInMB.toFixed(1)}MB). Please try different lighting or angle.`);
+          setIsCapturing(false);
+          return;
+        }
+      }
     }
+
+    console.log(`Captured image: ${canvas.width}x${canvas.height}, ${sizeInMB.toFixed(2)}MB`);
 
     // Flash effect then callback
     setTimeout(() => {
@@ -242,23 +255,36 @@ export function WebcamCapture({ onCapture }: WebcamCaptureProps) {
             return;
           }
 
-          // Same compression as webcam: max 1920px width, 0.85 quality
-          const MAX_WIDTH = 1920;
+          // Maximum resolution for crowd analysis - same as webcam
+          const MAX_WIDTH = 4096; // 4K for maximum facial detail
           const scale = Math.min(1, MAX_WIDTH / img.width);
           canvas.width = Math.round(img.width * scale);
           canvas.height = Math.round(img.height * scale);
 
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85);
 
-          // Safety check: warn if approaching Vercel 4.5MB limit
-          const sizeInMB = (compressedBase64.length * 0.75) / (1024 * 1024);
+          // Try high quality first, fall back if too large
+          let compressedBase64 = canvas.toDataURL('image/jpeg', 0.92);
+          let sizeInMB = (compressedBase64.length * 0.75) / (1024 * 1024);
+
           if (sizeInMB > 3.6) {
-            console.warn(`Uploaded image ${sizeInMB.toFixed(1)}MB exceeds safe limit`);
-            setError(`Image too large (${sizeInMB.toFixed(1)}MB). Please choose a smaller image.`);
-            return;
+            console.log(`Uploaded image ${sizeInMB.toFixed(1)}MB too large, reducing quality...`);
+            compressedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+            sizeInMB = (compressedBase64.length * 0.75) / (1024 * 1024);
+
+            if (sizeInMB > 3.6) {
+              compressedBase64 = canvas.toDataURL('image/jpeg', 0.75);
+              sizeInMB = (compressedBase64.length * 0.75) / (1024 * 1024);
+
+              if (sizeInMB > 3.6) {
+                console.warn(`Uploaded image ${sizeInMB.toFixed(1)}MB exceeds safe limit even at 0.75 quality`);
+                setError(`Image too large (${sizeInMB.toFixed(1)}MB). Please choose a smaller image.`);
+                return;
+              }
+            }
           }
 
+          console.log(`Uploaded image: ${canvas.width}x${canvas.height}, ${sizeInMB.toFixed(2)}MB`);
           onCapture(compressedBase64);
         };
         img.src = result;
