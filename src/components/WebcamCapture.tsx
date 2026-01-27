@@ -192,7 +192,7 @@ export function WebcamCapture({ onCapture }: WebcamCaptureProps) {
 
     // Maximum resolution for crowd analysis - capture as much detail as possible
     // Safety limit: 3.6MB (80% of Vercel's 4.5MB limit for headroom)
-    const MAX_WIDTH = 4096; // 4K for maximum facial detail in crowd shots
+    const MAX_WIDTH = 5120; // 5K for maximum facial detail in crowd shots
     const scale = Math.min(1, MAX_WIDTH / video.videoWidth);
     canvas.width = Math.round(video.videoWidth * scale);
     canvas.height = Math.round(video.videoHeight * scale);
@@ -256,7 +256,7 @@ export function WebcamCapture({ onCapture }: WebcamCaptureProps) {
           }
 
           // Maximum resolution for crowd analysis - same as webcam
-          const MAX_WIDTH = 4096; // 4K for maximum facial detail
+          const MAX_WIDTH = 5120; // 5K for maximum facial detail
           const scale = Math.min(1, MAX_WIDTH / img.width);
           canvas.width = Math.round(img.width * scale);
           canvas.height = Math.round(img.height * scale);
