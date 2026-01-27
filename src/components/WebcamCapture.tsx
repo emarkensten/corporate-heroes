@@ -190,8 +190,9 @@ export function WebcamCapture({ onCapture }: WebcamCaptureProps) {
       return;
     }
 
-    // Compress: scale down to max 800px width for faster upload
-    const MAX_WIDTH = 800;
+    // Compress: scale down to max 1920px width (Full HD) for best quality within Vercel 4.5MB limit
+    // With 0.85 quality, this typically results in 300-500KB (well under 3.6MB safe limit)
+    const MAX_WIDTH = 1920;
     const scale = Math.min(1, MAX_WIDTH / video.videoWidth);
     canvas.width = Math.round(video.videoWidth * scale);
     canvas.height = Math.round(video.videoHeight * scale);
@@ -199,8 +200,17 @@ export function WebcamCapture({ onCapture }: WebcamCaptureProps) {
     // Draw scaled video frame to canvas
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    // Convert to base64 with compression (0.8 quality)
-    const imageBase64 = canvas.toDataURL("image/jpeg", 0.8);
+    // Convert to base64 with high quality compression (0.85)
+    const imageBase64 = canvas.toDataURL("image/jpeg", 0.85);
+
+    // Safety check: Vercel has 4.5MB limit, warn if approaching (3.6MB = 80% limit)
+    const sizeInMB = (imageBase64.length * 0.75) / (1024 * 1024); // base64 to bytes
+    if (sizeInMB > 3.6) {
+      console.warn(`Image size ${sizeInMB.toFixed(1)}MB exceeds safe limit of 3.6MB`);
+      setError(`Image too large (${sizeInMB.toFixed(1)}MB). Please try a different angle or lighting.`);
+      setIsCapturing(false);
+      return;
+    }
 
     // Flash effect then callback
     setTimeout(() => {
@@ -232,14 +242,23 @@ export function WebcamCapture({ onCapture }: WebcamCaptureProps) {
             return;
           }
 
-          // Same compression as webcam: max 800px width, 0.8 quality
-          const MAX_WIDTH = 800;
+          // Same compression as webcam: max 1920px width, 0.85 quality
+          const MAX_WIDTH = 1920;
           const scale = Math.min(1, MAX_WIDTH / img.width);
           canvas.width = Math.round(img.width * scale);
           canvas.height = Math.round(img.height * scale);
 
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+
+          // Safety check: warn if approaching Vercel 4.5MB limit
+          const sizeInMB = (compressedBase64.length * 0.75) / (1024 * 1024);
+          if (sizeInMB > 3.6) {
+            console.warn(`Uploaded image ${sizeInMB.toFixed(1)}MB exceeds safe limit`);
+            setError(`Image too large (${sizeInMB.toFixed(1)}MB). Please choose a smaller image.`);
+            return;
+          }
+
           onCapture(compressedBase64);
         };
         img.src = result;
