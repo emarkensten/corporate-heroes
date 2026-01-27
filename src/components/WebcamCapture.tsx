@@ -222,7 +222,27 @@ export function WebcamCapture({ onCapture }: WebcamCaptureProps) {
     reader.onload = (event) => {
       const result = event.target?.result;
       if (typeof result === "string") {
-        onCapture(result);
+        // Compress uploaded image same as webcam capture
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            console.error('Failed to get canvas context');
+            return;
+          }
+
+          // Same compression as webcam: max 800px width, 0.8 quality
+          const MAX_WIDTH = 800;
+          const scale = Math.min(1, MAX_WIDTH / img.width);
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+          onCapture(compressedBase64);
+        };
+        img.src = result;
       }
     };
     reader.readAsDataURL(file);
