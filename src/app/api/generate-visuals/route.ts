@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateGTAImage } from "@/lib/gemini";
 
-export const maxDuration = 60;
+// Allow up to 300 seconds (5 min) for Gemini image generation
+// Requires Fluid Compute enabled in Vercel dashboard
+export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {

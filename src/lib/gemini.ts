@@ -139,14 +139,8 @@ export async function generateLyrics(
   imageBase64?: string
 ): Promise<string> {
   console.log("[generateLyrics] Starting with", keywords.length, "keywords, image:", imageBase64 ? `${Math.round(imageBase64.length / 1024)}KB` : "none");
-  // Low thinking for Vercel timeout compatibility - high times out on serverless
-  const model = genAI.getGenerativeModel({
-    model: "gemini-3-pro-preview",
-    generationConfig: {
-      // @ts-expect-error - thinkingConfig not in types yet but supported by API
-      thinkingConfig: { thinkingLevel: "low" }
-    }
-  });
+  // Default thinking (auto/high) for best creative quality - maxDuration=60 in route handles timeout
+  const model = genAI.getGenerativeModel({ model: "gemini-3-pro-preview" });
 
   // Build prompt with optional crowd section - extract visual details for the song
   const crowdSection = imageBase64

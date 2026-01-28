@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateLyrics, preprocessWords } from "@/lib/gemini";
 
+// Allow up to 300 seconds (5 min) for Gemini Pro with full thinking
+// Requires Fluid Compute enabled in Vercel dashboard (default on new projects)
+export const maxDuration = 300;
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
