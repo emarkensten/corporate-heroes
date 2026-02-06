@@ -9,7 +9,7 @@ type Word = {
 
 // Configuration
 const MAX_WORDS = 200;
-const WORD_TTL_MS = 30 * 60 * 1000; // 30 minutes
+const WORD_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
 
 // Global store (persists across requests in dev, resets on deploy)
 const globalStore = globalThis as unknown as {

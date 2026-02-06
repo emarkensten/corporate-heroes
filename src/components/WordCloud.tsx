@@ -99,6 +99,10 @@ export function WordCloud({ refreshInterval = 3000 }: WordCloudProps) {
           }
         }
 
+        // Cap display at 60 words for performance (keep newest)
+        if (result.length > 60) {
+          return result.slice(-60);
+        }
         return result;
       });
     } catch (error) {
@@ -168,21 +172,30 @@ export function WordCloud({ refreshInterval = 3000 }: WordCloudProps) {
               transform: "translate(-50%, -50%)",
             }}
           >
-            {/* Floating animation */}
-            <motion.span
-              animate={{
-                y: [0, -12, 0, 12, 0],
-                x: [0, 8, 0, -8, 0],
-              }}
-              transition={{
-                duration: 5 + Math.random() * 3,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-              className={`block font-mono font-bold text-xl md:text-3xl ${word.color} drop-shadow-[0_0_15px_currentColor] whitespace-nowrap select-none`}
-            >
-              {word.text}
-            </motion.span>
+            {/* Floating animation: Framer Motion for <=30 words, CSS for >30 */}
+            {words.length <= 30 ? (
+              <motion.span
+                animate={{
+                  y: [0, -12, 0, 12, 0],
+                  x: [0, 8, 0, -8, 0],
+                }}
+                transition={{
+                  duration: 5 + Math.random() * 3,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+                className={`block font-mono font-bold text-xl md:text-3xl ${word.color} drop-shadow-[0_0_15px_currentColor] whitespace-nowrap select-none`}
+              >
+                {word.text}
+              </motion.span>
+            ) : (
+              <span
+                className={`block font-mono font-bold text-xl md:text-3xl ${word.color} animate-float whitespace-nowrap select-none`}
+                style={{ animationDelay: `${Math.random() * -5}s` }}
+              >
+                {word.text}
+              </span>
+            )}
           </motion.div>
         ))}
       </AnimatePresence>

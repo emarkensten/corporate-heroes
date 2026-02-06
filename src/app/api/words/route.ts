@@ -12,7 +12,7 @@ if (!rateLimiter.requests) {
 
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
 // Higher limit for demo scenarios where many users might share same IP (corporate network/NAT)
-const RATE_LIMIT_MAX_REQUESTS = process.env.NODE_ENV === "production" ? 30 : 500;
+const RATE_LIMIT_MAX_REQUESTS = process.env.NODE_ENV === "production" ? 300 : 500;
 
 function getClientIP(request: NextRequest): string {
   // Try various headers for the real IP

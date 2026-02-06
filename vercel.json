@@ -1,13 +1,1 @@
-{
-  "functions": {
-    "src/app/api/generate-visuals/route.ts": {
-      "maxDuration": 60
-    },
-    "src/app/api/generate-lyrics/route.ts": {
-      "maxDuration": 60
-    },
-    "src/app/api/generate-music/route.ts": {
-      "maxDuration": 30
-    }
-  }
-}
+{}

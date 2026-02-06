@@ -61,6 +61,7 @@ export async function generateMusic(
     style: "80s power ballad, arena rock, anthemic chorus, inspirational, hopeful, uplifting, emotional powerful male vocals, soaring guitar solos, synthesizer layers, dramatic drums, stadium rock, english vocals, europe style, survivor style, epic love ballad",
     title: title,
     vocalGender: "m",
+    negativeTags: "rap, hip-hop, mumble, death metal, screamo, spoken word, lo-fi, trap, dubstep",
     callBackUrl: callBackUrl,
   };
 
