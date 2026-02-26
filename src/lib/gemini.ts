@@ -140,7 +140,7 @@ export async function generateLyrics(
 ): Promise<string> {
   console.log("[generateLyrics] Starting with", keywords.length, "keywords, image:", imageBase64 ? `${Math.round(imageBase64.length / 1024)}KB` : "none");
   // Default thinking (auto/high) for best creative quality - maxDuration=60 in route handles timeout
-  const model = genAI.getGenerativeModel({ model: "gemini-3-pro-preview" });
+  const model = genAI.getGenerativeModel({ model: "gemini-3.1-pro-preview" });
 
   // Build prompt with optional crowd section - extract visual details for the song
   const crowdSection = imageBase64
@@ -192,7 +192,7 @@ Example: "Fifteen warriors standing tall" or "In this room of golden light" or "
 }
 
 export async function generateGTAImage(imageBase64: string): Promise<string> {
-  const model = genAI.getGenerativeModel({ model: "gemini-3-pro-image-preview" });
+  const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-image-preview" });
 
   // 80s Power Ballad LP on table - photorealistic scene
   const prompt = `[SCENE COMPOSITION] Create a photorealistic photograph of a vintage vinyl LP record lying on a dark wooden table. The LP sleeve is the main focus, photographed from a slight angle above. Soft natural lighting from a window. The vinyl record is partially slid out of the sleeve, showing the black grooves.
