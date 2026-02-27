@@ -9,6 +9,8 @@ interface SunoGenerateRequest {
   title?: string;
   callBackUrl?: string;
   vocalGender?: "m" | "f";
+  styleWeight?: number;
+  weirdnessConstraint?: number;
 }
 
 interface SunoTaskResponse {
@@ -58,10 +60,12 @@ export async function generateMusic(
     instrumental: false,
     model: "V5",
     prompt: lyrics,
-    style: "80s power ballad, arena rock, anthemic chorus, inspirational, hopeful, uplifting, emotional powerful male vocals, soaring guitar solos, synthesizer layers, dramatic drums, stadium rock, english vocals, europe style, survivor style, epic love ballad",
+    style: "80s power ballad, arena rock, anthemic chorus, inspirational, hopeful, uplifting, emotional powerful male vocals, soaring guitar solos, synthesizer layers, dramatic drums, stadium rock, english vocals, europe style, survivor style, epic love ballad, stadium anthem, choir harmonies, dramatic build, key change, epic crescendo",
     title: title,
     vocalGender: "m",
     negativeTags: "rap, hip-hop, mumble, death metal, screamo, spoken word, lo-fi, trap, dubstep",
+    styleWeight: 0.85,
+    weirdnessConstraint: 0.15,
     callBackUrl: callBackUrl,
   };
 

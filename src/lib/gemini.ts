@@ -62,15 +62,23 @@ CREATIVE APPROACH:
 - Celebrate the people fighting for a better tomorrow
 - Be ORIGINAL - vary openings, perspectives, narratives
 
-STRUCTURE:
+STRUCTURE (use these EXACT section tags - Suno uses them to shape the music):
+- [Intro] - 1-2 atmospheric lines setting the mood, or just the tag for instrumental intro
 - [Verse] - Set the scene, weave in keywords (4-5 lines)
-- [Chorus] - The hopeful hook, repeat it (4-5 lines)
-- [Outro] - Epic ending, call to action (3-4 lines)
-- NO bridge - keep it punchy!
+- [Pre-Chorus] - Build tension toward the hook (2 lines)
+- [Chorus] - The anthemic hook with backing vocals (4-5 lines)
+- [Guitar Solo]
+- [Outro] - Epic finale, call to action (2-3 lines)
+
+BACKING VOCALS (Suno renders parentheses as backing/choir vocals):
+- End chorus lines with echo: "We are the heroes (we are the heroes)"
+- Add choir exclamations: (Yeah!), (Ooh!), (Hey!), (Whoa!)
+- Place at least 2-3 backing vocal moments across the song
+- Pre-chorus peak: add (Ooh!) or similar to build energy
 
 TECHNICAL RULES FOR SUNO:
-- Max 15 lines total
-- Parentheses () only for backing vocals: (Yeah!), (Ooh!), (Hey!)
+- ~18 lines of lyrics (metatag lines like [Verse] don't count toward Suno's limit)
+- Parentheses () ONLY for backing vocals
 - NO asterisks, instructions, or sound effects
 - One strong hopeful hook that repeats
 
