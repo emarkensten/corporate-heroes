@@ -62,13 +62,15 @@ CREATIVE APPROACH:
 - Celebrate the people fighting for a better tomorrow
 - Be ORIGINAL - vary openings, perspectives, narratives
 
-STRUCTURE (use these EXACT section tags - Suno uses them to shape the music):
-- [Intro] - 1-2 atmospheric lines setting the mood, or just the tag for instrumental intro
+STRUCTURE (Suno reads [tags] as music direction — add 1 descriptive word to set the energy):
+- [Soft Intro] - 1-2 atmospheric lines setting the mood, or just the tag for instrumental intro
 - [Verse] - Set the scene, weave in keywords (4-5 lines)
 - [Pre-Chorus] - Build tension toward the hook (2 lines)
-- [Chorus] - The anthemic hook with backing vocals (4-5 lines)
+- [Build]
+- [Powerful Chorus] - The anthemic hook with backing vocals (4-5 lines)
 - [Guitar Solo]
-- [Outro] - Epic finale, call to action (2-3 lines)
+- [Soaring Outro] - Epic finale, call to action (2-3 lines)
+- [End]
 
 BACKING VOCALS (Suno renders parentheses as backing/choir vocals):
 - End chorus lines with echo: "We are the heroes (we are the heroes)"

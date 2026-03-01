@@ -11,8 +11,9 @@ import { KaraokeDisplay } from "@/components/KaraokeDisplay";
 import { StemPlayer } from "@/components/StemPlayer";
 import { ImageReveal } from "@/components/ImageReveal";
 import { AppState } from "@/lib/types";
-import { Lock, RotateCcw, Zap, Mic, Image as ImageIcon, Music, Camera } from "lucide-react";
+import { Lock, RotateCcw, Zap, Mic, Image as ImageIcon, Music, Camera, FlaskConical } from "lucide-react";
 import { downloadBase64, downloadUrl } from "@/lib/download";
+import { useSearchParams } from "next/navigation";
 
 export default function MainStage() {
   // App state
@@ -224,6 +225,71 @@ export default function MainStage() {
     setAppState("LOBBY");
   }, []);
 
+  // Test mode: /?test=true skips photo+words, generates with dummy data
+  const searchParams = useSearchParams();
+  const testModeTriggered = useRef(false);
+
+  const handleTestMode = useCallback(async () => {
+    if (testModeTriggered.current) return;
+    testModeTriggered.current = true;
+
+    const testWords = ["SUSTAINABILITY", "INNOVATION", "COURAGE", "HOPE", "TOGETHER", "FUTURE"];
+    setBuzzwords(testWords);
+    setAppState("LOADING");
+    setError(null);
+    setMusicTaskId(null);
+
+    try {
+      // Generate real lyrics (no image — text only)
+      setProgress({ step: "Test mode: generating lyrics...", progress: 15 });
+      const lyricsResponse = await fetch("/api/generate-lyrics", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ keywords: testWords }),
+      });
+
+      if (!lyricsResponse.ok) throw new Error("Failed to generate lyrics");
+
+      const lyricsData = await lyricsResponse.json();
+      setLyrics(lyricsData.lyrics);
+      if (lyricsData.cleanedKeywords) setBuzzwords(lyricsData.cleanedKeywords);
+      setProgress({ step: "Lyrics ready!", progress: 30 });
+
+      // Start real music generation
+      setProgress({ step: "Test mode: starting music...", progress: 40 });
+      const musicResponse = await fetch("/api/start-music", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lyrics: lyricsData.lyrics, title: "Test Anthem" }),
+      });
+
+      if (!musicResponse.ok) {
+        const errorData = await musicResponse.json();
+        throw new Error(errorData.error || "Failed to start music");
+      }
+
+      const musicData = await musicResponse.json();
+      setMusicTaskId(musicData.taskId);
+
+      // Use a placeholder album cover (dark gradient SVG)
+      const placeholderSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800"><defs><radialGradient id="g" cx="50%" cy="40%"><stop offset="0%" stop-color="#2a1040"/><stop offset="60%" stop-color="#0a0a0a"/><stop offset="100%" stop-color="#000"/></radialGradient></defs><rect width="800" height="800" fill="url(#g)"/><text x="400" y="340" text-anchor="middle" fill="#FFD700" font-family="sans-serif" font-size="42" font-weight="bold" opacity="0.8">THE CORPORATE HEROES</text><text x="400" y="400" text-anchor="middle" fill="#FF1F8E" font-family="sans-serif" font-size="22" opacity="0.6">TEST MODE</text><text x="400" y="440" text-anchor="middle" fill="#666" font-family="monospace" font-size="14">Power Anthem</text></svg>`;
+      setGtaImage(`data:image/svg+xml,${encodeURIComponent(placeholderSvg)}`);
+
+      setProgress({ step: "Waiting for music...", progress: 100 });
+      setAppState("IMAGE_REVEAL");
+    } catch (err) {
+      console.error("Test mode error:", err);
+      setError(err instanceof Error ? err.message : "Test mode failed");
+      testModeTriggered.current = false;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (searchParams.get("test") === "true" && appState === "LOBBY") {
+      handleTestMode();
+    }
+  }, [searchParams, appState, handleTestMode]);
+
   // Suppress unused variable warning
   void capturedImage;
 
@@ -297,12 +363,20 @@ export default function MainStage() {
               <QRDisplay size={160} />
             </div>
 
-            {/* Word count indicator */}
-            <div className="fixed bottom-8 left-8 z-40">
+            {/* Word count indicator + test button */}
+            <div className="fixed bottom-8 left-8 z-40 flex items-center gap-4">
               <div className="flex items-center gap-2 text-zinc-500 font-mono text-sm">
                 <Zap className="w-4 h-4 text-[#FFD700]" />
                 <span>Scan QR to add buzzwords</span>
               </div>
+              <button
+                onClick={handleTestMode}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-900/80 border border-zinc-800 hover:border-violet-600 text-zinc-600 hover:text-violet-400 font-mono text-xs transition-all"
+                title="Generate a test song with dummy keywords (no photo needed)"
+              >
+                <FlaskConical className="w-3.5 h-3.5" />
+                Test
+              </button>
             </div>
           </motion.div>
         )}
