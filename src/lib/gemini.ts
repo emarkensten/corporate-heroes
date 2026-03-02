@@ -144,17 +144,24 @@ export async function preprocessWords(words: string[]): Promise<string[]> {
   }
 }
 
+// Models to try in order — primary first, fallbacks if 503/unavailable
+const LYRICS_MODELS = ["gemini-3.1-pro-preview", "gemini-2.5-pro-preview", "gemini-2.0-flash"];
+
 export async function generateLyrics(
   keywords: string[],
   imageBase64?: string
 ): Promise<string> {
   console.log("[generateLyrics] Starting with", keywords.length, "keywords, image:", imageBase64 ? `${Math.round(imageBase64.length / 1024)}KB` : "none");
-  // Default thinking (auto/high) for best creative quality - maxDuration=60 in route handles timeout
-  const model = genAI.getGenerativeModel({ model: "gemini-3.1-pro-preview" });
 
-  // Build prompt with optional crowd section - extract visual details for the song
-  const crowdSection = imageBase64
-    ? `
+  // Try each model in order until one succeeds
+  let lastError: Error | null = null;
+  for (const modelName of LYRICS_MODELS) {
+    console.log(`[generateLyrics] Trying model: ${modelName}`);
+    const model = genAI.getGenerativeModel({ model: modelName });
+
+    // Build prompt with optional crowd section
+    const crowdSection = imageBase64
+      ? `
 
 THE HEROES IN THE IMAGE (IMPORTANT - use these details prominently!):
 Study the image carefully and identify 3-5 visual details to weave into the song:
@@ -167,38 +174,47 @@ Study the image carefully and identify 3-5 visual details to weave into the song
 These heroes are the SUBJECT of the song - make them feel SEEN and CELEBRATED.
 Weave at least 2-3 of these visual observations into different parts of the song.
 Example: "Fifteen warriors standing tall" or "In this room of golden light" or "With your hands raised to the sky"`
-    : "";
+      : "";
 
-  const prompt = MC_KPI_PROMPT
-    .replace("{KEYWORDS}", keywords.join(", "))
-    .replace("{CROWD_SECTION}", crowdSection);
+    const prompt = MC_KPI_PROMPT
+      .replace("{KEYWORDS}", keywords.join(", "))
+      .replace("{CROWD_SECTION}", crowdSection);
 
-  // If image provided, send as multimodal request (one API call)
-  if (imageBase64) {
-    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
-    console.log("[generateLyrics] Sending multimodal request to Gemini, image size:", Math.round(base64Data.length / 1024), "KB");
+    try {
+      if (imageBase64) {
+        const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+        console.log("[generateLyrics] Multimodal request, image:", Math.round(base64Data.length / 1024), "KB");
 
-    return withRetry(async () => {
-      console.log("[generateLyrics] API call starting...");
-      const result = await model.generateContent([
-        prompt,
-        {
-          inlineData: {
-            mimeType: "image/jpeg",
-            data: base64Data,
-          },
-        },
-      ]);
-      console.log("[generateLyrics] API call completed!");
-      return result.response.text().replace(/\*+/g, '');
-    }, "generateLyrics (with image)");
+        return await withRetry(async () => {
+          console.log("[generateLyrics] API call starting...");
+          const result = await model.generateContent([
+            prompt,
+            { inlineData: { mimeType: "image/jpeg", data: base64Data } },
+          ]);
+          console.log("[generateLyrics] API call completed!");
+          return result.response.text().replace(/\*+/g, '');
+        }, `generateLyrics (with image, ${modelName})`);
+      }
+
+      // No image — text only
+      return await withRetry(async () => {
+        const result = await model.generateContent(prompt);
+        return result.response.text().replace(/\*+/g, '');
+      }, `generateLyrics (${modelName})`);
+
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      const msg = lastError.message.toLowerCase();
+      // Only fall through to next model on availability errors
+      if (msg.includes("503") || msg.includes("service unavailable") || msg.includes("high demand") || msg.includes("overloaded")) {
+        console.warn(`[generateLyrics] Model ${modelName} unavailable, trying next...`);
+        continue;
+      }
+      throw lastError; // Fatal error — don't retry with another model
+    }
   }
 
-  // No image - text only
-  return withRetry(async () => {
-    const result = await model.generateContent(prompt);
-    return result.response.text().replace(/\*+/g, '');
-  }, "generateLyrics");
+  throw lastError || new Error("All Gemini models unavailable");
 }
 
 export async function generateGTAImage(imageBase64: string): Promise<string> {
