@@ -13,7 +13,6 @@ import { ImageReveal } from "@/components/ImageReveal";
 import { AppState } from "@/lib/types";
 import { Lock, RotateCcw, Zap, Mic, Image as ImageIcon, Music, Camera, FlaskConical } from "lucide-react";
 import { downloadBase64, downloadUrl } from "@/lib/download";
-import { useSearchParams } from "next/navigation";
 
 export default function MainStage() {
   // App state
@@ -226,7 +225,6 @@ export default function MainStage() {
   }, []);
 
   // Test mode: /?test=true skips photo+words, generates with dummy data
-  const searchParams = useSearchParams();
   const testModeTriggered = useRef(false);
 
   const handleTestMode = useCallback(async () => {
@@ -285,10 +283,10 @@ export default function MainStage() {
   }, []);
 
   useEffect(() => {
-    if (searchParams.get("test") === "true" && appState === "LOBBY") {
+    if (new URLSearchParams(window.location.search).get("test") === "true" && appState === "LOBBY") {
       handleTestMode();
     }
-  }, [searchParams, appState, handleTestMode]);
+  }, [appState, handleTestMode]);
 
   // Suppress unused variable warning
   void capturedImage;
