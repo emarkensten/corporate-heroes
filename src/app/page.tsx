@@ -25,6 +25,7 @@ export default function MainStage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState({ step: "", progress: 0 });
   const [error, setError] = useState<string | null>(null);
+  const [fallbackWarning, setFallbackWarning] = useState(false);
   const [musicTaskId, setMusicTaskId] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const isCapturingRef = useRef(false); // Ref for immediate synchronous check
@@ -78,6 +79,7 @@ export default function MainStage() {
 
       const lyricsData = await lyricsResponse.json();
       setLyrics(lyricsData.lyrics);
+      if (lyricsData.usingFallback) setFallbackWarning(true);
       // Update buzzwords with cleaned/preprocessed keywords for accurate count
       if (lyricsData.cleanedKeywords) {
         setBuzzwords(lyricsData.cleanedKeywords);
@@ -218,6 +220,7 @@ export default function MainStage() {
     setIsPlaying(false);
     setProgress({ step: "", progress: 0 });
     setError(null);
+    setFallbackWarning(false);
     setMusicTaskId(null);
     isCapturingRef.current = false;
     setIsCapturing(false);
@@ -250,6 +253,7 @@ export default function MainStage() {
 
       const lyricsData = await lyricsResponse.json();
       setLyrics(lyricsData.lyrics);
+      if (lyricsData.usingFallback) setFallbackWarning(true);
       if (lyricsData.cleanedKeywords) setBuzzwords(lyricsData.cleanedKeywords);
       setProgress({ step: "Lyrics ready!", progress: 30 });
 
@@ -507,6 +511,19 @@ export default function MainStage() {
             exit={{ opacity: 0 }}
             className="relative min-h-screen"
           >
+            {/* Fallback model warning */}
+            {fallbackWarning && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="fixed top-0 left-0 right-0 z-[110] bg-amber-900/80 backdrop-blur-sm border-b border-amber-700/50 px-4 py-2 text-center"
+              >
+                <p className="text-amber-300 font-mono text-xs">
+                  ⚠ Gemini Pro upptagen — låten skapades med Flash-modellen. Textkvaliteten kan vara lägre än vanligt.
+                </p>
+              </motion.div>
+            )}
+
             {/* Download buttons - fixed top left */}
             <div className="fixed top-4 left-4 z-[100] flex gap-2">
               {gtaImage && (

@@ -22,12 +22,13 @@ export async function POST(request: NextRequest) {
     console.log("Cleaned keywords for lyrics:", cleanedKeywords);
 
     // Pass image for crowd analysis if provided
-    const lyrics = await generateLyrics(cleanedKeywords, image);
+    const { lyrics, usingFallback } = await generateLyrics(cleanedKeywords, image);
 
     return NextResponse.json({
       success: true,
       lyrics,
       cleanedKeywords,
+      usingFallback,
     });
   } catch (error) {
     console.error("Lyrics generation error:", error);

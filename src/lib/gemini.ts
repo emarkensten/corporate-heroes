@@ -144,24 +144,18 @@ export async function preprocessWords(words: string[]): Promise<string[]> {
   }
 }
 
-// Models to try in order — primary first, fallbacks if 503/unavailable
-const LYRICS_MODELS = ["gemini-3.1-pro-preview", "gemini-2.5-pro-preview", "gemini-2.0-flash"];
+// Primary model for lyrics. Fallback only if primary is down (503/high demand).
+const PRIMARY_LYRICS_MODEL = "gemini-3.1-pro-preview";
+const FALLBACK_LYRICS_MODEL = "gemini-3-flash-preview";
 
 export async function generateLyrics(
   keywords: string[],
   imageBase64?: string
-): Promise<string> {
+): Promise<{ lyrics: string; usingFallback: boolean }> {
   console.log("[generateLyrics] Starting with", keywords.length, "keywords, image:", imageBase64 ? `${Math.round(imageBase64.length / 1024)}KB` : "none");
 
-  // Try each model in order until one succeeds
-  let lastError: Error | null = null;
-  for (const modelName of LYRICS_MODELS) {
-    console.log(`[generateLyrics] Trying model: ${modelName}`);
-    const model = genAI.getGenerativeModel({ model: modelName });
-
-    // Build prompt with optional crowd section
-    const crowdSection = imageBase64
-      ? `
+  const crowdSection = imageBase64
+    ? `
 
 THE HEROES IN THE IMAGE (IMPORTANT - use these details prominently!):
 Study the image carefully and identify 3-5 visual details to weave into the song:
@@ -174,18 +168,26 @@ Study the image carefully and identify 3-5 visual details to weave into the song
 These heroes are the SUBJECT of the song - make them feel SEEN and CELEBRATED.
 Weave at least 2-3 of these visual observations into different parts of the song.
 Example: "Fifteen warriors standing tall" or "In this room of golden light" or "With your hands raised to the sky"`
-      : "";
+    : "";
 
-    const prompt = MC_KPI_PROMPT
-      .replace("{KEYWORDS}", keywords.join(", "))
-      .replace("{CROWD_SECTION}", crowdSection);
+  const prompt = MC_KPI_PROMPT
+    .replace("{KEYWORDS}", keywords.join(", "))
+    .replace("{CROWD_SECTION}", crowdSection);
+
+  const modelsToTry = [PRIMARY_LYRICS_MODEL, FALLBACK_LYRICS_MODEL];
+  let lastError: Error | null = null;
+
+  for (const modelName of modelsToTry) {
+    const usingFallback = modelName !== PRIMARY_LYRICS_MODEL;
+    console.log(`[generateLyrics] Trying model: ${modelName}${usingFallback ? " (FALLBACK)" : ""}`);
+    const model = genAI.getGenerativeModel({ model: modelName });
 
     try {
       if (imageBase64) {
         const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
         console.log("[generateLyrics] Multimodal request, image:", Math.round(base64Data.length / 1024), "KB");
 
-        return await withRetry(async () => {
+        const lyrics = await withRetry(async () => {
           console.log("[generateLyrics] API call starting...");
           const result = await model.generateContent([
             prompt,
@@ -194,23 +196,24 @@ Example: "Fifteen warriors standing tall" or "In this room of golden light" or "
           console.log("[generateLyrics] API call completed!");
           return result.response.text().replace(/\*+/g, '');
         }, `generateLyrics (with image, ${modelName})`);
+        return { lyrics, usingFallback };
       }
 
       // No image — text only
-      return await withRetry(async () => {
+      const lyrics = await withRetry(async () => {
         const result = await model.generateContent(prompt);
         return result.response.text().replace(/\*+/g, '');
       }, `generateLyrics (${modelName})`);
+      return { lyrics, usingFallback };
 
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
       const msg = lastError.message.toLowerCase();
-      // Only fall through to next model on availability errors
       if (msg.includes("503") || msg.includes("service unavailable") || msg.includes("high demand") || msg.includes("overloaded")) {
-        console.warn(`[generateLyrics] Model ${modelName} unavailable, trying next...`);
+        console.warn(`[generateLyrics] Model ${modelName} unavailable, trying fallback...`);
         continue;
       }
-      throw lastError; // Fatal error — don't retry with another model
+      throw lastError;
     }
   }
 
